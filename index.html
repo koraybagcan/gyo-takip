@@ -527,7 +527,7 @@ function renderRecentTable(rows) {
   const tbody = document.getElementById('recent-tbody');
   if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><p>Henüz işlem yok</p></div></td></tr>`; return; }
   tbody.innerHTML = rows.map(r => `<tr onclick="openIslemDetay('${r.id}')">
-    <td class="mono">${r.tarih||'—'}</td>
+    <td class="mono">${fmtDate(r.tarih)}</td>
     <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
     <td>${r.islem_turleri?.ad||'—'}</td>
     <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'}">${r.tip==='gelir'?'+':'−'} ${fmt(r.tutar)}</td>
@@ -566,7 +566,7 @@ function renderMuhasebeTable(rows) {
     const t = parseFloat(r.tutar)||0;
     if (r.tip==='gelir') tg+=t; else td+=t;
     return `<tr onclick="openIslemDetay('${r.id}')">
-      <td class="mono">${r.tarih||'—'}</td>
+      <td class="mono">${fmtDate(r.tarih)}</td>
       <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
       <td>${r.islem_turleri?.ad||'—'}</td>
       <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'};font-weight:600;">${r.tip==='gelir'?'+':'−'} ${fmt(t)}</td>
@@ -684,7 +684,7 @@ async function openIslemDetay(id) {
   const { data } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').eq('id',id).single();
   if (!data) return;
   document.getElementById('det-id').value = id;
-  document.getElementById('det-tarih').textContent = data.tarih||'—';
+  document.getElementById('det-tarih').textContent = fmtDate(data.tarih);
   document.getElementById('det-tip').innerHTML = data.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>';
   document.getElementById('det-tur').textContent = data.islem_turleri?.ad||'—';
   document.getElementById('det-tutar').textContent = (data.tip==='gelir'?'+ ':'− ')+fmt(data.tutar)+' ₺';
@@ -821,6 +821,12 @@ document.addEventListener('click', e => { if(e.target.classList.contains('modal-
 document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
 
 function fmt(n) { return (parseFloat(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) {
+  if (!d) return '—';
+  const parts = String(d).split('-');
+  if (parts.length !== 3) return d;
+  return parts[2]+'.'+parts[1]+'.'+parts[0];
+}
 function showToast(msg, type='success') {
   const c = document.getElementById('toast-container');
   const el = document.createElement('div');
