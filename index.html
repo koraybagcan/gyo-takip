@@ -348,7 +348,7 @@
         <div class="form-group"><label class="form-label">Güncel Kira (₺)</label><input type="number" class="form-input" id="md-kira" step="0.01"></div>
         <div class="form-group"><label class="form-label">Toplam Kira (₺)</label><input type="number" class="form-input" id="md-toplam-kira" step="0.01"></div>
       </div>
-      <div class="form-group"><label class="form-label">Toplam Masraf (₺)</label><input type="number" class="form-input" id="md-toplam-masraf" step="0.01"></div>
+
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-mulk-duzenle')">İptal</button>
@@ -470,7 +470,16 @@ async function loadTurler() {
 async function loadMulkler() {
   const { data } = await sb.from('mulkler').select('*').order('created_at');
   if (!data) return;
-  mulkler = data;
+  // Her mülk için gider toplamını çek
+  const { data: giderler } = await sb.from('islemler')
+    .select('mulk_id, tutar')
+    .eq('tip', 'gider')
+    .not('mulk_id', 'is', null);
+  const giderMap = {};
+  (giderler||[]).forEach(g => {
+    giderMap[g.mulk_id] = (giderMap[g.mulk_id]||0) + (parseFloat(g.tutar)||0);
+  });
+  mulkler = data.map(m => ({ ...m, hesaplanan_masraf: giderMap[m.id]||0 }));
   renderMulkler();
   renderKonfigMulkler();
   populateMulkSelects();
@@ -602,7 +611,7 @@ function renderMulkler() {
       </div>
       <div class="property-row"><span class="lbl">Alım Bedeli</span><span class="val">${m.bedel?fmt(m.bedel):'—'} ₺</span></div>
       <div class="property-row"><span class="lbl">Alım Masrafı</span><span class="val">${m.alim_masrafi?fmt(m.alim_masrafi):'—'} ₺</span></div>
-      <div class="property-row"><span class="lbl">Toplam Masraf</span><span class="val">${m.masraf_toplam?fmt(m.masraf_toplam):'—'} ₺</span></div>
+      <div class="property-row"><span class="lbl">Toplam Masraf</span><span class="val">${fmt(m.hesaplanan_masraf)} ₺</span></div>
       <div class="property-row"><span class="lbl">Güncel Kira</span><span class="val green">${m.guncel_kira?fmt(m.guncel_kira)+' ₺':'—'}</span></div>
       <div class="property-row"><span class="lbl">Toplam Kira</span><span class="val">${m.toplam_kira?fmt(m.toplam_kira)+' ₺':'—'}</span></div>
     </div>`) .join('') : `<div class="empty"><div class="empty-icon">🏠</div><p>Mülk eklenmemiş</p></div>`;
@@ -723,7 +732,7 @@ function openMulkDuzenle(id) {
   document.getElementById('md-masraf').value = m.alim_masrafi||'';
   document.getElementById('md-kira').value = m.guncel_kira||'';
   document.getElementById('md-toplam-kira').value = m.toplam_kira||'';
-  document.getElementById('md-toplam-masraf').value = m.masraf_toplam||'';
+
   openModal('modal-mulk-duzenle');
 }
 
@@ -735,7 +744,7 @@ async function saveMulkDuzenle() {
     alim_masrafi: parseFloat(document.getElementById('md-masraf').value)||null,
     guncel_kira: parseFloat(document.getElementById('md-kira').value)||null,
     toplam_kira: parseFloat(document.getElementById('md-toplam-kira').value)||null,
-    masraf_toplam: parseFloat(document.getElementById('md-toplam-masraf').value)||null,
+
   };
   if (!updates.ad) { showToast('Mülk adı zorunludur.','error'); return; }
   const { error } = await sb.from('mulkler').update(updates).eq('id', id);
