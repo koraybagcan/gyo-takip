@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.6</title>
+<title>GYO Takip v1.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -178,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.6</div>
+      <div class="version">v1.7</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -210,6 +210,7 @@
         <div class="kpi-card green"><div class="kpi-label">Kira Geliri</div><div class="kpi-value green" id="kpi-kira">—</div><div class="kpi-sub">Toplam</div></div>
         <div class="kpi-card red"><div class="kpi-label">Toplam Gider</div><div class="kpi-value red" id="kpi-gider">—</div><div class="kpi-sub">Tüm zamanlar</div></div>
         <div class="kpi-card"><div class="kpi-label">Mülk Sayısı</div><div class="kpi-value" id="kpi-mulk">—</div><div class="kpi-sub">Aktif</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Aylık Kira Geliri</div><div class="kpi-value green" id="kpi-aylik-kira">—</div><div class="kpi-sub">Tüm mülkler toplam</div></div>
         <div class="kpi-card"><div class="kpi-label">Aylık Aidat</div><div class="kpi-value" id="kpi-aylik-aidat">—</div><div class="kpi-sub" id="kpi-aylik-aidat-sub">Kişi başı</div></div>
       </div>
       <div class="section-header"><div class="section-title">Mülkler</div></div>
@@ -500,7 +501,7 @@ async function loadTurler() {
 async function loadMulkler() {
   const { data } = await sb.from('mulkler').select('*').order('created_at');
   if (!data) return;
-  // Her mülk için gider toplamını çek
+  // Gider toplamlarını hesapla
   const { data: giderler } = await sb.from('islemler')
     .select('mulk_id, tutar')
     .eq('tip', 'gider')
@@ -509,7 +510,35 @@ async function loadMulkler() {
   (giderler||[]).forEach(g => {
     giderMap[g.mulk_id] = (giderMap[g.mulk_id]||0) + (parseFloat(g.tutar)||0);
   });
-  mulkler = data.map(m => ({ ...m, hesaplanan_masraf: giderMap[m.id]||0 }));
+  // Kira toplamlarını hesapla
+  const kiraId = gelirTurleri.find(t => /kira/i.test(t.ad))?.id;
+  const kiraMap = {};
+  const maxKiraMap = {};
+  if (kiraId) {
+    const { data: kiralar } = await sb.from('islemler')
+      .select('mulk_id, tutar, tarih')
+      .eq('tip', 'gelir')
+      .eq('tur_id', kiraId)
+      .not('mulk_id', 'is', null)
+      .order('tarih', { ascending: false });
+    (kiralar||[]).forEach(k => {
+      kiraMap[k.mulk_id] = (kiraMap[k.mulk_id]||0) + (parseFloat(k.tutar)||0);
+    });
+    // Her mülk için en son kira kaydını bul (güncel kira)
+    const seen = new Set();
+    (kiralar||[]).forEach(k => {
+      if (!seen.has(k.mulk_id)) {
+        maxKiraMap[k.mulk_id] = parseFloat(k.tutar)||0;
+        seen.add(k.mulk_id);
+      }
+    });
+  }
+  mulkler = data.map(m => ({
+    ...m,
+    hesaplanan_masraf: giderMap[m.id]||0,
+    hesaplanan_toplam_kira: kiraMap[m.id]||0,
+    hesaplanan_guncel_kira: maxKiraMap[m.id]||0,
+  }));
   renderMulkler();
   renderKonfigMulkler();
   populateMulkSelects();
@@ -558,6 +587,9 @@ async function loadDashboard() {
   document.getElementById('kpi-kira').textContent = fmt(totalKira);
   document.getElementById('kpi-gider').textContent = fmt(totalGider);
   document.getElementById('kpi-mulk').textContent = mulkler.length;
+  // Aylık kira = tüm mülklerin hesaplanan güncel kirası toplamı
+  const aylikKiraTop = mulkler.reduce((s,m) => s + (m.hesaplanan_guncel_kira||0), 0);
+  document.getElementById('kpi-aylik-kira').textContent = fmt(aylikKiraTop);
   const { data: recent } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').order('tarih',{ascending:false}).limit(10);
   renderRecentTable(recent||[]);
 }
@@ -642,8 +674,8 @@ function renderMulkler() {
       <div class="property-row"><span class="lbl">Alım Bedeli</span><span class="val">${m.bedel?fmt(m.bedel):'—'} ₺</span></div>
       <div class="property-row"><span class="lbl">Alım Masrafı</span><span class="val">${m.alim_masrafi?fmt(m.alim_masrafi):'—'} ₺</span></div>
       <div class="property-row"><span class="lbl">Toplam Masraf</span><span class="val">${fmt(m.hesaplanan_masraf)} ₺</span></div>
-      <div class="property-row"><span class="lbl">Güncel Kira</span><span class="val green">${m.guncel_kira?fmt(m.guncel_kira)+' ₺':'—'}</span></div>
-      <div class="property-row"><span class="lbl">Toplam Kira</span><span class="val">${m.toplam_kira?fmt(m.toplam_kira)+' ₺':'—'}</span></div>
+      <div class="property-row"><span class="lbl">Güncel Kira</span><span class="val green">${m.hesaplanan_guncel_kira?fmt(m.hesaplanan_guncel_kira)+' ₺':'—'}</span></div>
+      <div class="property-row"><span class="lbl">Toplam Kira</span><span class="val">${m.hesaplanan_toplam_kira?fmt(m.hesaplanan_toplam_kira)+' ₺':'—'}</span></div>
     </div>`) .join('') : `<div class="empty"><div class="empty-icon">🏠</div><p>Mülk eklenmemiş</p></div>`;
   document.getElementById('properties-grid').innerHTML = html;
   document.getElementById('mulkler-grid').innerHTML = html;
@@ -679,12 +711,7 @@ async function saveGelir() {
   if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
   const { error } = await sb.from('islemler').insert({ tarih, tip:'gelir', tur_id, tutar, aciklama, mulk_id });
   if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
-  // Kira ise mülkün toplam_kira'sını güncelle
-  const turAd = document.getElementById('g-tur').options[document.getElementById('g-tur').selectedIndex]?.dataset?.ad||'';
-  if (/kira/i.test(turAd) && mulk_id) {
-    const mulk = mulkler.find(m=>m.id===mulk_id);
-    if (mulk) await sb.from('mulkler').update({ toplam_kira: (parseFloat(mulk.toplam_kira)||0)+tutar, guncel_kira: tutar }).eq('id',mulk_id);
-  }
+  // Kira/gider değerleri artık islemlerden otomatik hesaplanıyor
   showToast('Gelir kaydedildi ✓','success');
   closeModal('modal-gelir');
   document.getElementById('g-tutar').value=''; document.getElementById('g-aciklama').value='';
@@ -700,11 +727,7 @@ async function saveGider() {
   if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
   const { error } = await sb.from('islemler').insert({ tarih, tip:'gider', tur_id, tutar, aciklama, mulk_id });
   if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
-  // Mülkün masraf_toplam'ını güncelle
-  if (mulk_id) {
-    const mulk = mulkler.find(m=>m.id===mulk_id);
-    if (mulk) await sb.from('mulkler').update({ masraf_toplam: (parseFloat(mulk.masraf_toplam)||0)+tutar }).eq('id',mulk_id);
-  }
+  // Masraf değerleri artık islemlerden otomatik hesaplanıyor
   showToast('Gider kaydedildi ✓','success');
   closeModal('modal-gider');
   document.getElementById('gd-tutar').value=''; document.getElementById('gd-aciklama').value='';
