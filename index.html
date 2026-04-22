@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.1</title>
+<title>GYO Takip v1.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -174,7 +174,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.1</div>
+      <div class="version">v1.2</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -223,8 +223,8 @@
       <div class="table-wrap">
         <div class="table-toolbar">
           <div class="filter-bar">
-            <input type="date" class="filter-input" id="filter-start" style="width:140px;">
-            <input type="date" class="filter-input" id="filter-end" style="width:140px;">
+            <input type="text" class="filter-input" id="filter-start" style="width:120px;" placeholder="GG.MM.YYYY" maxlength="10" oninput="autoFormatDate(this)">
+            <input type="text" class="filter-input" id="filter-end" style="width:120px;" placeholder="GG.MM.YYYY" maxlength="10" oninput="autoFormatDate(this)">
             <select class="filter-select" id="filter-type"><option value="">Tümü</option><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
             <select class="filter-select" id="filter-kategori"><option value="">Tüm Kategoriler</option></select>
             <select class="filter-select" id="filter-mulk"><option value="">Tüm Mülkler</option></select>
@@ -415,8 +415,8 @@ window.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   ['g-tarih','gd-tarih'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
   const d90 = new Date(); d90.setDate(d90.getDate()-90);
-  document.getElementById('filter-start').value = d90.toISOString().split('T')[0];
-  document.getElementById('filter-end').value = today;
+  document.getElementById('filter-start').value = toDisplayDate(d90.toISOString().split('T')[0]);
+  document.getElementById('filter-end').value = toDisplayDate(today);
 });
 
 async function checkSession() {
@@ -546,8 +546,8 @@ function renderRecentTable(rows) {
 }
 
 async function loadMuhasebe() {
-  const start = document.getElementById('filter-start').value;
-  const end = document.getElementById('filter-end').value;
+  const start = parseDisplayDate(document.getElementById('filter-start').value);
+  const end = parseDisplayDate(document.getElementById('filter-end').value);
   const typeFilter = document.getElementById('filter-type').value;
   const katFilter = document.getElementById('filter-kategori').value;
   const mulkFilter = document.getElementById('filter-mulk').value;
@@ -835,6 +835,28 @@ function fmtDate(d) {
   const parts = String(d).split('-');
   if (parts.length !== 3) return d;
   return parts[2]+'.'+parts[1]+'.'+parts[0];
+}
+// dd.mm.yyyy → yyyy-mm-dd (Supabase sorgusu için)
+function parseDisplayDate(s) {
+  if (!s || s.length < 10) return '';
+  const p = s.split('.');
+  if (p.length !== 3) return s;
+  return p[2]+'-'+p[1]+'-'+p[0];
+}
+// yyyy-mm-dd → dd.mm.yyyy
+function toDisplayDate(s) {
+  if (!s) return '';
+  const p = s.split('-');
+  if (p.length !== 3) return s;
+  return p[2]+'.'+p[1]+'.'+p[0];
+}
+// Otomatik nokta ekle: 04 → 04. → 04.07 → 04.07. → 04.07.2025
+function autoFormatDate(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
+  if (v.length > 5) v = v.slice(0,5)+'.'+v.slice(5);
+  if (v.length > 10) v = v.slice(0,10);
+  el.value = v;
 }
 function showToast(msg, type='success') {
   const c = document.getElementById('toast-container');
