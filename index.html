@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.0</title>
+<title>GYO Takip v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -350,7 +350,7 @@
 <!-- ═══════════════════════════════════════════
      SUPABASE CONFIG SCREEN (shown first run)
 ═══════════════════════════════════════════ -->
-<div id="config-screen">
+<div id="config-screen" style="display:none;">
   <h1>GYO Takip</h1>
   <p>Başlamak için Supabase proje bilgilerini gir. Bu bilgiler tarayıcıda saklanmaz — her oturum başında girilmesi gerekir.</p>
   <div class="config-form">
@@ -401,7 +401,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.0</div>
+      <div class="version">v1.1</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')">
@@ -614,6 +614,12 @@
 
 <script>
 // ═══════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════
+const SB_URL = 'https://xsqehferiqsyjbdipdhq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcWVoZmVyaXFzeWpiZGlwZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NTU1NzQsImV4cCI6MjA5MjQzMTU3NH0.DosyVIc058jy7eax31EJqO8V1M5LJmi35EkCLhOm_54';
+
+// ═══════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════
 let sb = null;
@@ -644,12 +650,9 @@ function initSupabase() {
 }
 
 function resetConfig() {
-  sessionStorage.removeItem('sb_url');
-  sessionStorage.removeItem('sb_key');
-  sb = null;
+  sb = supabase.createClient(SB_URL, SB_KEY);
   document.getElementById('app').classList.remove('visible');
-  document.getElementById('login-screen').classList.remove('visible');
-  document.getElementById('config-screen').style.display = 'flex';
+  document.getElementById('login-screen').classList.add('visible');
 }
 
 async function checkConnection() {
@@ -666,22 +669,16 @@ async function checkConnection() {
 
 // ─── AUTO-RESTORE FROM SESSION ───
 window.addEventListener('DOMContentLoaded', () => {
-  const url = sessionStorage.getItem('sb_url');
-  const key = sessionStorage.getItem('sb_key');
-  if (url && key) {
-    document.getElementById('sb-url').value = url;
-    document.getElementById('sb-key').value = key;
-    sb = supabase.createClient(url, key);
-    document.getElementById('config-screen').style.display = 'none';
-    checkSession();
-  }
-  // Set default dates for modals
+  // Otomatik Supabase bağlantısı
+  sb = supabase.createClient(SB_URL, SB_KEY);
+  checkSession();
+  // Varsayılan tarihler
   const today = new Date().toISOString().split('T')[0];
   ['g-tarih','gd-tarih'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = today;
   });
-  // Set filter date range (last 90 days)
+  // Filtre tarih aralığı (son 90 gün)
   const d90 = new Date(); d90.setDate(d90.getDate() - 90);
   document.getElementById('filter-start').value = d90.toISOString().split('T')[0];
   document.getElementById('filter-end').value = today;
