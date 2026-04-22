@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.4</title>
+<title>GYO Takip v1.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
@@ -88,7 +88,7 @@
   .property-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); }
   .property-row:last-child { border-bottom:none; }
   .property-row .lbl { font-size:11px; color:var(--text-muted); }
-  .property-row .val { font-family:'DM Mono',monospace; font-size:12px; color:var(--text); font-weight:500; }
+  .property-row .val { font-family:'Inter',sans-serif; font-size:13px; color:var(--text); font-weight:500; }
   .property-row .val.green { color:var(--green); }
 
   .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
@@ -178,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.4</div>
+      <div class="version">v1.5</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
