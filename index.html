@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.5</title>
+<title>GYO Takip v1.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -178,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.5</div>
+      <div class="version">v1.6</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -391,14 +391,6 @@
           <span id="det-tarih" style="font-family:'DM Mono',monospace;font-size:12px;"></span>
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="color:var(--text-muted);font-size:12px;">Tür</span>
-          <span id="det-tip"></span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <span style="color:var(--text-muted);font-size:12px;">Kategori</span>
-          <span id="det-tur" style="font-size:13px;"></span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
           <span style="color:var(--text-muted);font-size:12px;">Tutar</span>
           <span id="det-tutar" style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;"></span>
         </div>
@@ -407,9 +399,22 @@
           <span id="det-aciklama" style="font-size:12px;color:var(--text-muted);max-width:260px;text-align:right;"></span>
         </div>
       </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tip</label>
+          <select class="form-select" id="det-tip-select" onchange="onDetTipChange()">
+            <option value="gelir">Gelir</option>
+            <option value="gider">Gider</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="det-tur-select"></select>
+        </div>
+      </div>
       <div class="form-group">
-        <label class="form-label">Mülk Ata</label>
-        <select class="form-select" id="det-mulk"><option value="">Mülk seç (isteğe bağlı)...</option></select>
+        <label class="form-label">Mülk (isteğe bağlı)</label>
+        <select class="form-select" id="det-mulk"><option value="">Mülk seç...</option></select>
       </div>
     </div>
     <div class="modal-footer">
@@ -714,24 +719,34 @@ async function deleteIslem(id) {
   loadDashboard(); loadMuhasebe();
 }
 
+function onDetTipChange() {
+  const tip = document.getElementById('det-tip-select').value;
+  const turSel = document.getElementById('det-tur-select');
+  const turler = tip === 'gelir' ? gelirTurleri : giderTurleri;
+  turSel.innerHTML = turler.map(t => `<option value="${t.id}">${t.ad}</option>`).join('');
+}
+
 async function openIslemDetay(id) {
   const { data } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').eq('id',id).single();
   if (!data) return;
   document.getElementById('det-id').value = id;
   document.getElementById('det-tarih').textContent = fmtDate(data.tarih);
-  document.getElementById('det-tip').innerHTML = data.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>';
-  document.getElementById('det-tur').textContent = data.islem_turleri?.ad||'—';
   document.getElementById('det-tutar').textContent = (data.tip==='gelir'?'+ ':'− ')+fmt(data.tutar)+' ₺';
   document.getElementById('det-tutar').style.color = data.tip==='gelir'?'var(--green)':'var(--red)';
   document.getElementById('det-aciklama').textContent = data.aciklama||'—';
+  document.getElementById('det-tip-select').value = data.tip;
+  onDetTipChange();
+  document.getElementById('det-tur-select').value = data.tur_id||'';
   document.getElementById('det-mulk').value = data.mulk_id||'';
   openModal('modal-islem-detay');
 }
 
 async function saveIslemDetay() {
   const id = document.getElementById('det-id').value;
+  const tip = document.getElementById('det-tip-select').value;
+  const tur_id = document.getElementById('det-tur-select').value || null;
   const mulk_id = document.getElementById('det-mulk').value || null;
-  const { error } = await sb.from('islemler').update({ mulk_id }).eq('id', id);
+  const { error } = await sb.from('islemler').update({ tip, tur_id, mulk_id }).eq('id', id);
   if (error) { showToast('Güncelleme hatası: '+error.message,'error'); return; }
   showToast('Kayıt güncellendi ✓','success');
   closeModal('modal-islem-detay');
