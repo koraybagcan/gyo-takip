@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.2</title>
+<title>GYO Takip v1.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -149,6 +149,10 @@
   .filter-select { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text-muted); font-size:12px; cursor:pointer; outline:none; }
   .filter-input { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text); font-size:12px; outline:none; }
   .filter-input::placeholder { color:var(--text-dim); }
+  .date-picker-wrap { position:relative; display:inline-flex; align-items:center; }
+  .date-hidden { position:absolute; opacity:0; pointer-events:none; width:100%; height:100%; top:0; left:0; }
+  .date-display { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text); font-size:12px; cursor:pointer; white-space:nowrap; min-width:110px; display:inline-block; transition:border-color .2s; font-family:'DM Mono',monospace; }
+  .date-display:hover { border-color:var(--border2); color:var(--text); }
 
   .mulk-field { display:none; }
   .mulk-field.visible { display:flex; flex-direction:column; gap:5px; }
@@ -174,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.2</div>
+      <div class="version">v1.3</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -223,8 +227,14 @@
       <div class="table-wrap">
         <div class="table-toolbar">
           <div class="filter-bar">
-            <input type="text" class="filter-input" id="filter-start" style="width:120px;" placeholder="GG.MM.YYYY" maxlength="10" oninput="autoFormatDate(this)">
-            <input type="text" class="filter-input" id="filter-end" style="width:120px;" placeholder="GG.MM.YYYY" maxlength="10" oninput="autoFormatDate(this)">
+            <div class="date-picker-wrap">
+              <input type="date" class="filter-input date-hidden" id="filter-start" style="width:130px;" onchange="updateDateDisplay('filter-start')">
+              <span class="date-display" id="filter-start-display" onclick="document.getElementById('filter-start').showPicker()">GG.MM.YYYY</span>
+            </div>
+            <div class="date-picker-wrap">
+              <input type="date" class="filter-input date-hidden" id="filter-end" style="width:130px;" onchange="updateDateDisplay('filter-end')">
+              <span class="date-display" id="filter-end-display" onclick="document.getElementById('filter-end').showPicker()">GG.MM.YYYY</span>
+            </div>
             <select class="filter-select" id="filter-type"><option value="">Tümü</option><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
             <select class="filter-select" id="filter-kategori"><option value="">Tüm Kategoriler</option></select>
             <select class="filter-select" id="filter-mulk"><option value="">Tüm Mülkler</option></select>
@@ -415,8 +425,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   ['g-tarih','gd-tarih'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
   const d90 = new Date(); d90.setDate(d90.getDate()-90);
-  document.getElementById('filter-start').value = toDisplayDate(d90.toISOString().split('T')[0]);
-  document.getElementById('filter-end').value = toDisplayDate(today);
+  document.getElementById('filter-start').value = d90.toISOString().split('T')[0];
+  document.getElementById('filter-end').value = today;
+  updateDateDisplay('filter-start');
+  updateDateDisplay('filter-end');
 });
 
 async function checkSession() {
@@ -546,8 +558,8 @@ function renderRecentTable(rows) {
 }
 
 async function loadMuhasebe() {
-  const start = parseDisplayDate(document.getElementById('filter-start').value);
-  const end = parseDisplayDate(document.getElementById('filter-end').value);
+  const start = document.getElementById('filter-start').value;
+  const end = document.getElementById('filter-end').value;
   const typeFilter = document.getElementById('filter-type').value;
   const katFilter = document.getElementById('filter-kategori').value;
   const mulkFilter = document.getElementById('filter-mulk').value;
@@ -836,6 +848,11 @@ function fmtDate(d) {
   if (parts.length !== 3) return d;
   return parts[2]+'.'+parts[1]+'.'+parts[0];
 }
+function updateDateDisplay(id) {
+  const val = document.getElementById(id).value;
+  const display = document.getElementById(id+'-display');
+  if (display) display.textContent = val ? fmtDate(val) : 'GG.MM.YYYY';
+}
 // dd.mm.yyyy → yyyy-mm-dd (Supabase sorgusu için)
 function parseDisplayDate(s) {
   if (!s || s.length < 10) return '';
@@ -850,14 +867,7 @@ function toDisplayDate(s) {
   if (p.length !== 3) return s;
   return p[2]+'.'+p[1]+'.'+p[0];
 }
-// Otomatik nokta ekle: 04 → 04. → 04.07 → 04.07. → 04.07.2025
-function autoFormatDate(el) {
-  let v = el.value.replace(/[^0-9]/g, '');
-  if (v.length > 2) v = v.slice(0,2)+'.'+v.slice(2);
-  if (v.length > 5) v = v.slice(0,5)+'.'+v.slice(5);
-  if (v.length > 10) v = v.slice(0,10);
-  el.value = v;
-}
+
 function showToast(msg, type='success') {
   const c = document.getElementById('toast-container');
   const el = document.createElement('div');
