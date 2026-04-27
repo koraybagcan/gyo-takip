@@ -2,971 +2,966 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Beslenme">
-<link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="logo.png">
-<meta name="theme-color" content="#0a0a0f">
-<title>Beslenme Takip</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GYO Takip v1.7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
-    --bg: #0a0a0f;
-    --surface: #13131a;
-    --surface2: #1c1c26;
-    --border: #2a2a3a;
-    --accent: #c8f043;
-    --accent2: #43c8f0;
-    --accent3: #f043a8;
-    --text: #f0f0f5;
-    --text2: #8888aa;
-    --text3: #55556a;
-    --green: #4ade80;
-    --radius: 16px;
-    --radius-sm: 10px;
+    --bg:#0f0e0c; --surface:#181714; --surface2:#211f1b; --surface3:#2a2722;
+    --border:#332f29; --border2:#403b33; --text:#f0ead8; --text-muted:#8a8070;
+    --text-dim:#5a5448; --accent:#c9a96e; --accent2:#e8c887; --accent-dim:#7a5f35;
+    --green:#6ab187; --green-dim:#2a4a38; --red:#c96b6b; --red-dim:#4a2828;
+    --radius:8px; --radius-lg:14px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; max-width: 430px; margin: 0 auto; padding-bottom: 100px; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; line-height:1.6; min-height:100vh; }
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--surface); }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:3px; }
 
-  .header { padding: 16px 20px 12px; position: sticky; top: 0; background: var(--bg); z-index: 100; border-bottom: 1px solid var(--border); }
-  .header-top { display: flex; justify-content: space-between; align-items: center; }
-  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: -0.5px; }
-  .logo span { color: var(--accent); }
-  .date-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 6px 12px; font-size: 12px; color: var(--text2); font-weight: 500; }
+  #login-screen { position:fixed; inset:0; background:var(--bg); display:none; align-items:center; justify-content:center; z-index:9998; flex-direction:column; padding:24px; }
+  #login-screen.visible { display:flex; }
+  .login-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px; width:100%; max-width:400px; }
+  .login-card h2 { font-family:'DM Serif Display',serif; font-size:26px; color:var(--accent2); margin-bottom:6px; }
+  .login-card p { color:var(--text-muted); font-size:13px; margin-bottom:28px; }
+  .login-badge { font-size:10px; text-transform:uppercase; letter-spacing:1.5px; color:var(--accent-dim); font-weight:600; margin-bottom:16px; }
 
-  .section { margin: 16px 20px 0; }
-  .section-title { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text2); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-  .section-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  #app { display:none; min-height:100vh; }
+  #app.visible { display:flex; }
 
-  .sport-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; font-family: 'Syne', sans-serif; }
-  .sport-badge.fitness { background: rgba(200,240,67,0.12); color: var(--accent); border: 1px solid rgba(200,240,67,0.3); }
-  .sport-badge.hali    { background: rgba(67,200,240,0.12); color: var(--accent2); border: 1px solid rgba(67,200,240,0.3); }
-  .sport-badge.bos     { background: rgba(255,255,255,0.05); color: var(--text2); border: 1px solid var(--border); }
-  .sport-badge.unknown { background: rgba(240,67,168,0.1); color: var(--accent3); border: 1px solid rgba(240,67,168,0.25); }
+  .sidebar { width:220px; min-width:220px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+  .sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid var(--border); }
+  .sidebar-logo .brand { font-family:'DM Serif Display',serif; font-size:20px; color:var(--accent2); }
+  .sidebar-logo .version { font-family:'DM Mono',monospace; font-size:10px; color:var(--text-dim); margin-top:2px; }
+  .nav { padding:12px 10px; flex:1; display:flex; flex-direction:column; gap:2px; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius); color:var(--text-muted); cursor:pointer; font-size:13px; font-weight:500; transition:all .15s; user-select:none; }
+  .nav-item:hover { background:var(--surface2); color:var(--text); }
+  .nav-item.active { background:var(--surface3); color:var(--accent); }
+  .nav-item .icon { font-size:16px; width:20px; text-align:center; }
+  .sidebar-footer { padding:16px 10px; border-top:1px solid var(--border); display:flex; flex-direction:column; gap:8px; }
+  .user-chip { display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:var(--radius); background:var(--surface2); }
+  .user-avatar { width:28px; height:28px; border-radius:50%; background:var(--accent-dim); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:var(--accent2); flex-shrink:0; }
+  .user-info { flex:1; min-width:0; }
+  .user-name { font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .user-role { font-size:10px; color:var(--text-muted); }
 
-  .today-sport-row { display: flex; align-items: center; justify-content: space-between; margin: 14px 20px 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-  .today-sport-label { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
-  .today-sport-edit { font-size: 11px; color: var(--accent2); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .main { margin-left:220px; flex:1; min-height:100vh; display:flex; flex-direction:column; }
+  .topbar { padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:50; }
+  .page-title { font-family:'DM Serif Display',serif; font-size:20px; color:var(--accent2); }
+  .topbar-actions { display:flex; gap:8px; align-items:center; }
 
-  .protein-card { margin: 12px 20px 0; background: var(--surface); border-radius: var(--radius); padding: 18px; border: 1px solid var(--border); position: relative; overflow: hidden; }
-  .protein-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
-  .protein-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
-  .protein-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); font-weight: 600; }
-  .protein-numbers { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; }
-  .protein-numbers span { font-size: 14px; color: var(--text2); font-weight: 400; }
-  .progress-track { height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .protein-sources { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
-  .source-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 11px; color: var(--text2); cursor: pointer; transition: all 0.15s; user-select: none; display: flex; align-items: center; gap: 4px; }
-  .source-chip.active { background: rgba(200,240,67,0.12); border-color: var(--accent); color: var(--accent); }
-  .chip-protein { font-size: 10px; opacity: 0.7; }
+  .btn { padding:8px 16px; border-radius:var(--radius); font-size:13px; font-weight:500; font-family:'DM Sans',sans-serif; cursor:pointer; border:none; outline:none; transition:all .15s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary { background:var(--accent); color:#1a1500; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-secondary:hover { background:var(--surface3); border-color:var(--border2); }
+  .btn-danger { background:var(--red-dim); color:var(--red); border:1px solid var(--red-dim); }
+  .btn-danger:hover { background:var(--red); color:var(--text); }
+  .btn-sm { padding:5px 11px; font-size:12px; }
+  .btn-green { background:var(--green-dim); color:var(--green); border:1px solid var(--green-dim); }
+  .btn-green:hover { background:var(--green); color:#0a1a12; }
+  .btn-red { background:var(--red-dim); color:var(--red); border:1px solid var(--red-dim); }
+  .btn-red:hover { background:var(--red); color:#fff; }
 
-  .meal-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; transition: all 0.2s; cursor: pointer; user-select: none; }
-  .meal-card.checked { border-color: rgba(200,240,67,0.3); background: rgba(200,240,67,0.05); }
-  .meal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-  .meal-info { flex: 1; }
-  .meal-time { font-size: 11px; color: var(--accent2); font-weight: 600; letter-spacing: 0.5px; margin-bottom: 3px; }
-  .meal-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
-  .meal-desc { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
-  .check-circle { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-left: 12px; margin-top: 2px; transition: all 0.2s; }
-  .meal-card.checked .check-circle { background: var(--accent); border-color: var(--accent); }
-  .check-circle svg { opacity: 0; transition: opacity 0.2s; }
-  .meal-card.checked .check-circle svg { opacity: 1; }
-  .meal-macros { display: flex; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
-  .macro { display: flex; flex-direction: column; gap: 1px; }
-  .macro-val { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
-  .macro-key { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .page { display:none; padding:28px; flex:1; }
+  .page.active { display:block; }
 
-  .supp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .supp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; cursor: pointer; user-select: none; transition: all 0.2s; }
-  .supp-card.checked { border-color: rgba(67,200,240,0.4); background: rgba(67,200,240,0.06); }
-  .supp-card.inactive { opacity: 0.3; pointer-events: none; }
-  .supp-icon { font-size: 22px; margin-bottom: 8px; }
-  .supp-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
-  .supp-dose { font-size: 11px; color: var(--text2); }
-  .supp-time { font-size: 10px; color: var(--text3); margin-top: 4px; }
-  .supp-check { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); margin-top: 8px; transition: all 0.2s; }
-  .supp-card.checked .supp-check { background: var(--accent2); border-color: var(--accent2); }
+  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:14px; margin-bottom:28px; }
+  .kpi-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 22px; position:relative; overflow:hidden; }
+  .kpi-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--accent),transparent); opacity:.6; }
+  .kpi-card.green::before { background:linear-gradient(90deg,var(--green),transparent); }
+  .kpi-card.red::before { background:linear-gradient(90deg,var(--red),transparent); }
+  .kpi-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:600; margin-bottom:8px; }
+  .kpi-value { font-family:'DM Serif Display',serif; font-size:26px; color:var(--accent2); line-height:1; }
+  .kpi-value.green { color:var(--green); }
+  .kpi-value.red { color:var(--red); }
+  .kpi-sub { font-size:11px; color:var(--text-dim); margin-top:4px; font-family:'DM Mono',monospace; }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .section-title { font-size:13px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; }
 
-  .water-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
-  .water-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-  .water-title { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
-  .water-count { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent2); }
-  .water-cups { display: flex; gap: 6px; flex-wrap: wrap; }
-  .water-cup { width: 36px; height: 36px; border-radius: 8px; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; transition: all 0.15s; user-select: none; filter: grayscale(1) opacity(0.4); }
-  .water-cup.filled { border-color: var(--accent2); background: rgba(67,200,240,0.1); filter: none; }
+  .properties-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:28px; }
+  .property-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; transition:border-color .2s; }
+  .property-card:hover { border-color:var(--border2); }
+  .property-name { font-family:'DM Serif Display',serif; font-size:17px; color:var(--text); }
+  .property-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); }
+  .property-row:last-child { border-bottom:none; }
+  .property-row .lbl { font-size:11px; color:var(--text-muted); }
+  .property-row .val { font-family:'Inter',sans-serif; font-size:13px; color:var(--text); font-weight:500; }
+  .property-row .val.green { color:var(--green); }
 
-  /* CALENDAR */
-  .cal-month-nav { display: flex; align-items: center; justify-content: space-between; margin: 14px 20px 0; }
-  .cal-month-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
-  .cal-nav-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; }
-  .cal-nav-btn:active { background: var(--surface2); }
-  .cal-list { margin: 12px 20px 0; }
-  .cal-day-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; user-select: none; }
-  .cal-day-row:active { border-color: var(--accent2); }
-  .cal-day-row.today-row { border-color: rgba(200,240,67,0.35); }
-  .cal-day-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; color: var(--text2); }
-  .cal-day-num.today-num { color: var(--accent); }
-  .cal-day-info { flex: 1; }
-  .cal-day-name { font-size: 11px; color: var(--text2); margin-bottom: 3px; font-weight: 500; }
-  .cal-day-sport { font-size: 13px; font-weight: 600; font-family: 'Syne', sans-serif; }
-  .cal-day-sport.fitness { color: var(--accent); }
-  .cal-day-sport.hali    { color: var(--accent2); }
-  .cal-day-sport.bos     { color: var(--text3); }
-  .cal-day-sport.unknown { color: var(--accent3); font-style: italic; }
-  .cal-day-arrow { color: var(--text3); font-size: 14px; flex-shrink: 0; }
+  .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+  .table-toolbar { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { text-align:left; padding:10px 16px; font-size:10px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); font-weight:600; background:var(--surface2); border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .1s; cursor:pointer; }
+  tbody tr:hover { background:var(--surface2); }
+  tbody tr:last-child { border-bottom:none; }
+  tbody td { padding:10px 16px; font-size:13px; }
+  tbody td.mono { font-family:'DM Mono',monospace; font-size:12px; }
+  .badge { display:inline-flex; align-items:center; padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .badge-green { background:var(--green-dim); color:var(--green); }
+  .badge-red { background:var(--red-dim); color:var(--red); }
+  .badge-blue { background:#0a1a2a; color:#6ab1d4; }
+  .table-footer { padding:10px 18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; color:var(--text-dim); font-size:12px; }
 
-  /* SHEET */
-  .sheet-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: flex-end; backdrop-filter: blur(4px); }
-  .sheet-overlay.open { display: flex; }
-  .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 24px 24px 0 0; padding: 20px 20px 40px; width: 100%; max-width: 430px; margin: 0 auto; animation: slideUp 0.25s ease; }
-  @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-  .sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 20px; }
-  .sheet-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; margin-bottom: 6px; }
-  .sheet-date-label { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
-  .sport-options { display: flex; flex-direction: column; gap: 10px; }
-  .sport-option { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); cursor: pointer; transition: all 0.15s; user-select: none; }
-  .sport-option:active { opacity: 0.7; }
-  .sport-option.sel-fitness { border-color: var(--accent);  background: rgba(200,240,67,0.08); }
-  .sport-option.sel-hali    { border-color: var(--accent2); background: rgba(67,200,240,0.08); }
-  .sport-option.sel-bos     { border-color: var(--text2);   background: rgba(255,255,255,0.04); }
-  .sport-opt-icon { font-size: 26px; }
-  .sport-opt-info { flex: 1; }
-  .sport-opt-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
-  .sport-opt-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .sport-opt-check { font-size: 18px; opacity: 0; transition: opacity 0.15s; }
-  .sport-option.sel-fitness .sport-opt-check,
-  .sport-option.sel-hali    .sport-opt-check,
-  .sport-option.sel-bos     .sport-opt-check { opacity: 1; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); font-weight:600; }
+  .form-input, .form-select { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:9px 13px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif; outline:none; width:100%; transition:border-color .2s; }
+  .form-input:focus, .form-select:focus { border-color:var(--accent-dim); }
+  .form-select option { background:var(--surface2); }
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
-  /* BOTTOM NAV */
-  .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: rgba(10,10,15,0.92); backdrop-filter: blur(20px); border-top: 1px solid var(--border); display: flex; padding: 12px 20px 20px; gap: 4px; }
-  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 4px; border: none; background: transparent; cursor: pointer; color: var(--text3); transition: color 0.2s; font-family: 'DM Sans', sans-serif; font-size: 10px; font-weight: 500; border-radius: 10px; }
-  .nav-btn.active { color: var(--accent); }
-  .nav-btn svg { width: 22px; height: 22px; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; backdrop-filter:blur(4px); }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; width:100%; max-width:500px; animation:modalIn .2s ease; }
+  @keyframes modalIn { from { opacity:0; transform:translateY(16px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+  .modal-title { font-family:'DM Serif Display',serif; font-size:20px; color:var(--accent2); margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+  .modal-body { display:flex; flex-direction:column; gap:14px; }
+  .modal-footer { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); display:flex; gap:8px; justify-content:flex-end; }
 
-  /* WEEKLY */
-  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-  .week-day { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-  .week-day-label { font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 600; }
-  .week-day-circle { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--text2); }
-  .week-day-circle.today     { border-color: var(--accent); color: var(--accent); }
-  .week-day-circle.completed { background: var(--accent); border-color: var(--accent); color: #000; }
-  .week-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--text3); }
-  .week-dot.good { background: var(--green); }
-  .week-dot.mid  { background: #facc15; }
-  .score-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
-  .score-num { font-family: 'Syne', sans-serif; font-size: 64px; font-weight: 800; line-height: 1; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .score-label { font-size: 13px; color: var(--text2); margin-top: 6px; }
-  .stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
-  .stat-box { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
-  .stat-val { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
-  .stat-key { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-  .streak-banner { background: linear-gradient(135deg, rgba(200,240,67,0.12), rgba(67,200,240,0.12)); border: 1px solid rgba(200,240,67,0.2); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin: 16px 20px 0; }
-  .streak-icon { font-size: 28px; }
-  .streak-text { flex: 1; }
-  .streak-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; }
-  .streak-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
-  .streak-num { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: var(--accent); }
+  .config-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-bottom:20px; }
+  .config-section h3 { font-size:14px; font-weight:600; color:var(--text); margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+  .type-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .type-item { display:flex; align-items:center; justify-content:space-between; padding:9px 13px; background:var(--surface2); border-radius:var(--radius); border:1px solid var(--border); gap:8px; }
+  .type-item .type-name { font-size:13px; flex:1; }
+  .type-item-add { display:flex; gap:8px; }
 
-  .page { display: none; }
-  .page.active { display: block; }
+  #toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+  .toast { background:var(--surface3); border:1px solid var(--border2); border-radius:var(--radius); padding:12px 16px; font-size:13px; color:var(--text); display:flex; align-items:center; gap:10px; animation:toastIn .25s ease; max-width:320px; }
+  .toast.success { border-left:3px solid var(--green); }
+  .toast.error { border-left:3px solid var(--red); }
+  @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+
+  .loading { display:flex; align-items:center; gap:8px; color:var(--text-muted); font-size:13px; padding:20px; }
+  .spinner { width:18px; height:18px; border:2px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .empty { padding:48px 20px; text-align:center; color:var(--text-dim); }
+  .empty .empty-icon { font-size:36px; margin-bottom:12px; }
+
+  .pagination { display:flex; gap:4px; align-items:center; }
+  .page-btn { padding:4px 10px; border-radius:6px; background:var(--surface2); border:1px solid var(--border); color:var(--text-muted); cursor:pointer; font-size:12px; transition:all .15s; }
+  .page-btn:hover { background:var(--surface3); color:var(--text); }
+  .page-btn.active { background:var(--accent-dim); color:var(--accent); border-color:var(--accent-dim); }
+
+  .filter-bar { display:flex; gap:8px; flex-wrap:wrap; }
+  .filter-select { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text-muted); font-size:12px; cursor:pointer; outline:none; }
+  .filter-input { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text); font-size:12px; outline:none; }
+  .filter-input::placeholder { color:var(--text-dim); }
+  .date-picker-wrap { position:relative; display:inline-flex; align-items:center; }
+  .date-hidden { position:absolute; opacity:0; pointer-events:none; width:100%; height:100%; top:0; left:0; }
+  .date-display { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text); font-size:12px; cursor:pointer; white-space:nowrap; min-width:110px; display:inline-block; transition:border-color .2s; font-family:'DM Mono',monospace; }
+  .date-display:hover { border-color:var(--border2); color:var(--text); }
+
+  .mulk-field { display:none; }
+  .mulk-field.visible { display:flex; flex-direction:column; gap:5px; }
 </style>
 </head>
 <body>
 
-<!-- PAGE: BUGÜN -->
-<div class="page active" id="page-today">
-  <div class="header">
-    <div class="header-top">
-      <div class="logo">BESLENME<span>.</span></div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
-        <div class="date-pill" id="date-display" onclick="showPage('cal')" style="cursor:pointer"></div>
-        <div id="sync-indicator" style="font-size:10px;color:var(--text3);padding-right:2px"></div>
-      </div>
-    </div>
-  </div>
-  <div id="today-loading" style="display:none;text-align:center;padding:40px 20px;color:var(--text3);font-size:13px">Veriler yükleniyor...</div>
-
-  <div class="today-sport-row">
-    <div>
-      <div class="today-sport-label">Bugünün sporu</div>
-      <div id="today-sport-badge"></div>
-    </div>
-    <div class="today-sport-edit" onclick="openSheet(todayKey())">Düzenle →</div>
-  </div>
-
-  <div class="protein-card">
-    <div class="protein-header">
-      <div class="protein-label">Günlük Protein</div>
-      <div class="protein-numbers"><span id="protein-current">0</span><span>/165g</span></div>
-    </div>
-    <div class="progress-track"><div class="progress-fill" id="protein-bar" style="width:0%"></div></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title"><div class="dot"></div>Öğünler</div>
-    <div id="meals-container"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent2)"></div>Takviyeler</div>
-    <div class="supp-grid" id="supps-container"></div>
-  </div>
-
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent2)"></div>Su Takibi</div>
-    <div class="water-card">
-      <div class="water-header">
-        <div class="water-title">💧 Günlük Su</div>
-        <div><span class="water-count" id="water-count">0</span><span style="color:var(--text2);font-size:13px">/10 bardak</span></div>
-      </div>
-      <div class="water-cups" id="water-cups"></div>
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-badge">GYO Takip</div>
+    <h2>Giriş Yap</h2>
+    <p>Yetkili üyeler e-posta ve şifre ile giriş yapabilir.</p>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="form-group"><label class="form-label">E-posta</label><input type="email" class="form-input" id="login-email" placeholder="ad@ornek.com"></div>
+      <div class="form-group"><label class="form-label">Şifre</label><input type="password" class="form-input" id="login-password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Giriş Yap</button>
+      <div id="login-error" style="display:none;color:var(--red);font-size:12px;text-align:center;"></div>
     </div>
   </div>
 </div>
 
-<!-- PAGE: TAKVİM -->
-<div class="page" id="page-cal">
-  <div class="header">
-    <div class="header-top"><div class="logo">TAKVİM<span>.</span></div></div>
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="brand">GYO Takip</div>
+      <div class="version">v1.7</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item" onclick="showPage('muhasebe')"><span class="icon">⟳</span> Muhasebe</div>
+      <div class="nav-item" onclick="showPage('mulkler')"><span class="icon">⌂</span> Mülkler</div>
+      <div class="nav-item" onclick="showPage('konfigurasyon')"><span class="icon">⚙</span> Konfigürasyon</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-info"><div class="user-name" id="user-name">—</div><div class="user-role">Üye</div></div>
+      </div>
+      <button class="btn btn-secondary btn-sm" style="width:100%;justify-content:center;" onclick="doLogout()">Çıkış</button>
+    </div>
   </div>
-  <div class="cal-month-nav">
-    <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
-    <div class="cal-month-title" id="cal-month-label"></div>
-    <button class="cal-nav-btn" onclick="calNextMonth()">›</button>
-  </div>
-  <div class="cal-list" id="cal-list"></div>
-</div>
 
-<!-- PAGE: HAFTA -->
-<div class="page" id="page-week">
-  <div class="header"><div class="header-top"><div class="logo">HAFTALIK<span>.</span></div></div></div>
-  <div class="streak-banner">
-    <div class="streak-icon">🔥</div>
-    <div class="streak-text"><div class="streak-title">Seri</div><div class="streak-sub">Üst üste tamamlanan gün</div></div>
-    <div class="streak-num" id="streak-num">0</div>
-  </div>
-  <div class="section">
-    <div class="section-title"><div class="dot"></div>Bu Hafta</div>
-    <div class="week-grid" id="week-grid"></div>
-  </div>
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent2)"></div>Haftalık Özet</div>
-    <div class="score-card">
-      <div class="score-num" id="week-score">0</div>
-      <div class="score-label">Uyum Puanı (7 günlük ortalama)</div>
-      <div class="stat-row">
-        <div class="stat-box"><div class="stat-val" id="stat-meals" style="color:var(--accent)">0/14</div><div class="stat-key">Öğünler</div></div>
-        <div class="stat-box"><div class="stat-val" id="stat-supps" style="color:var(--accent2)">0/28</div><div class="stat-key">Takviye</div></div>
-        <div class="stat-box"><div class="stat-val" id="stat-water" style="color:var(--accent3)">0L</div><div class="stat-key">Su</div></div>
-      </div>
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-actions" id="topbar-actions"></div>
     </div>
-  </div>
-</div>
 
-<!-- PAGE: PROGRAM -->
-<div class="page" id="page-plan">
-  <div class="header"><div class="header-top"><div class="logo">PROGRAM<span>.</span></div></div></div>
-  <div class="section">
-    <div class="section-title"><div class="dot"></div>Makro Hedefler</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;color:var(--text2)">🏋️ Antrenman günü</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">~2.100 kcal</div></div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;color:var(--text2)">😴 Dinlenme günü</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">~1.900 kcal</div></div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;color:var(--text2)">💪 Protein hedefi</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent)">165–175g/gün</div></div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0"><div style="font-size:13px;color:var(--text2)">💧 Su hedefi</div><div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent2)">2.5–3L/gün</div></div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent2)"></div>Takviye Zamanlaması</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:13px;color:var(--text2)">💪 Kreatin <span style="color:var(--text3);font-size:11px">5g</span></div>
-        <div style="font-size:12px;color:var(--text);text-align:right">Her gün<br><span style="color:var(--text3);font-size:11px">sabah veya öğlenle</span></div>
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Nakit Bakiye</div><div class="kpi-value" id="kpi-bakiye">—</div><div class="kpi-sub">Güncel</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Toplam Aidat</div><div class="kpi-value green" id="kpi-aidat">—</div><div class="kpi-sub">Tüm zamanlar</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Toplam Faiz</div><div class="kpi-value green" id="kpi-faiz">—</div><div class="kpi-sub">Tüm zamanlar</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Kira Geliri</div><div class="kpi-value green" id="kpi-kira">—</div><div class="kpi-sub">Toplam</div></div>
+        <div class="kpi-card red"><div class="kpi-label">Toplam Gider</div><div class="kpi-value red" id="kpi-gider">—</div><div class="kpi-sub">Tüm zamanlar</div></div>
+        <div class="kpi-card"><div class="kpi-label">Mülk Sayısı</div><div class="kpi-value" id="kpi-mulk">—</div><div class="kpi-sub">Aktif</div></div>
+        <div class="kpi-card green"><div class="kpi-label">Aylık Kira Geliri</div><div class="kpi-value green" id="kpi-aylik-kira">—</div><div class="kpi-sub">Tüm mülkler toplam</div></div>
+        <div class="kpi-card"><div class="kpi-label">Aylık Aidat</div><div class="kpi-value" id="kpi-aylik-aidat">—</div><div class="kpi-sub" id="kpi-aylik-aidat-sub">Kişi başı</div></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:13px;color:var(--text2)">⚡ BCAA</div>
-        <div style="font-size:12px;color:var(--text);text-align:right">Antrenman/maç sırasında<br><span style="color:var(--text3);font-size:11px">sadece spor günleri</span></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:13px;color:var(--text2)">🥤 Whey <span style="color:var(--text3);font-size:11px">30g</span></div>
-        <div style="font-size:12px;color:var(--text);text-align:right">Antrenman/maç sonrası 30 dk<br><span style="color:var(--text3);font-size:11px">300ml su veya sütle</span></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:13px;color:var(--text2)">🔄 Glutamin <span style="color:var(--text3);font-size:11px">5g</span></div>
-        <div style="font-size:12px;color:var(--text);text-align:right">Her gün<br><span style="color:var(--text3);font-size:11px">akşam yemeği sonrası</span></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0">
-        <div style="font-size:13px;color:var(--text2)">😴 Magnezyum <span style="color:var(--text3);font-size:11px">biglisinat</span></div>
-        <div style="font-size:12px;color:var(--text);text-align:right">Her gün<br><span style="color:var(--text3);font-size:11px">uyku öncesi 30–60 dk</span></div>
+      <div class="section-header"><div class="section-title">Mülkler</div></div>
+      <div class="properties-grid" id="properties-grid"><div class="loading"><div class="spinner"></div> Yükleniyor...</div></div>
+      <div class="section-header" style="margin-top:8px;"><div class="section-title">Son İşlemler</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tarih</th><th>Tür</th><th>Kategori</th><th>Tutar</th><th>Mülk</th><th>Açıklama</th></tr></thead>
+          <tbody id="recent-tbody"><tr><td colspan="6"><div class="loading"><div class="spinner"></div> Yükleniyor...</div></td></tr></tbody>
+        </table>
       </div>
     </div>
-  </div>
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent2)"></div>Öğün Seçenekleri</div>
-    <!-- OGLEN ANTRENMAN -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent2);margin-bottom:2px;">&#9728;&#65039; ÖĞLEN — Antrenman / Halı Saha Günü</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">~700–750 kcal · ~45g protein</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;">
-        <div style="font-size:12px;color:var(--text2);line-height:1.9">
-          4 yumurta (haşlanmış veya omlet)<br>
-          2 dilim tam buğday ekmek<br>
-          Domates, salatalık<br>
-          1 kase yulaf ezmesi (sütle) + 1 muz<br>
-          1 bardak süt veya 150g yoğurt
+
+    <!-- MUHASEBE -->
+    <div class="page" id="page-muhasebe">
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="filter-bar">
+            <div class="date-picker-wrap">
+              <input type="date" class="filter-input date-hidden" id="filter-start" style="width:130px;" onchange="updateDateDisplay('filter-start')">
+              <span class="date-display" id="filter-start-display" onclick="document.getElementById('filter-start').showPicker()">GG.MM.YYYY</span>
+            </div>
+            <div class="date-picker-wrap">
+              <input type="date" class="filter-input date-hidden" id="filter-end" style="width:130px;" onchange="updateDateDisplay('filter-end')">
+              <span class="date-display" id="filter-end-display" onclick="document.getElementById('filter-end').showPicker()">GG.MM.YYYY</span>
+            </div>
+            <select class="filter-select" id="filter-type"><option value="">Tümü</option><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
+            <select class="filter-select" id="filter-kategori"><option value="">Tüm Kategoriler</option></select>
+            <select class="filter-select" id="filter-mulk"><option value="">Tüm Mülkler</option></select>
+            <button class="btn btn-secondary btn-sm" onclick="loadMuhasebe()">Filtrele</button>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);" id="muhasebe-count"></div>
+        </div>
+        <table>
+          <thead><tr><th>Tarih</th><th>Tür</th><th>Kategori</th><th>Tutar (₺)</th><th>Bakiye (₺)</th><th>Mülk</th><th>Açıklama</th><th></th></tr></thead>
+          <tbody id="muhasebe-tbody"><tr><td colspan="8"><div class="loading"><div class="spinner"></div> Yükleniyor...</div></td></tr></tbody>
+        </table>
+        <div class="table-footer">
+          <div id="muhasebe-summary" style="font-family:'DM Mono',monospace;font-size:12px;"></div>
+          <div class="pagination" id="muhasebe-pagination"></div>
         </div>
       </div>
     </div>
-    <!-- OGLEN DINLENME -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text2);margin-bottom:2px;">&#9728;&#65039; ÖĞLEN — Dinlenme Günü</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">~600 kcal · ~40g protein</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;">
-        <div style="font-size:12px;color:var(--text2);line-height:1.9">
-          3 yumurta omlet (içine 30g kaşar veya lor)<br>
-          2 dilim tam buğday ekmek<br>
-          Söğüş: domates, salatalık, zeytin<br>
-          1 bardak kefir veya yoğurt
+
+    <!-- MÜLKLER -->
+    <div class="page" id="page-mulkler">
+      <div class="properties-grid" id="mulkler-grid"><div class="loading"><div class="spinner"></div> Yükleniyor...</div></div>
+    </div>
+
+    <!-- KONFİGÜRASYON -->
+    <div class="page" id="page-konfigurasyon">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div class="config-section">
+          <h3>💰 Gelir Türleri</h3>
+          <div class="type-list" id="gelir-turleri-list"></div>
+          <div class="type-item-add"><input type="text" class="form-input" id="new-gelir-turu" placeholder="Yeni tür adı..."><button class="btn btn-green btn-sm" onclick="addTur('gelir')">+ Ekle</button></div>
+        </div>
+        <div class="config-section">
+          <h3>📤 Gider Türleri</h3>
+          <div class="type-list" id="gider-turleri-list"></div>
+          <div class="type-item-add"><input type="text" class="form-input" id="new-gider-turu" placeholder="Yeni tür adı..."><button class="btn btn-red btn-sm" onclick="addTur('gider')">+ Ekle</button></div>
+        </div>
+      </div>
+      <div class="config-section" style="margin-top:0;">
+        <h3>⌂ Mülkler</h3>
+        <div class="type-list" id="mulk-list"></div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-weight:600;">Yeni Mülk Ekle</div>
+          <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:center;">
+            <input type="text" class="form-input" id="new-mulk-adi" placeholder="Mülk adı">
+            <input type="number" class="form-input" id="new-mulk-bedel" placeholder="Alım bedeli">
+            <input type="number" class="form-input" id="new-mulk-masraf" placeholder="Alım masrafı">
+            <input type="number" class="form-input" id="new-mulk-kira" placeholder="Güncel kira">
+            <button class="btn btn-secondary btn-sm" onclick="addMulk()">+ Ekle</button>
+          </div>
+        </div>
+      </div>
+      <div class="config-section" style="margin-top:0;">
+        <h3>💳 Aylık Aidat</h3>
+        <div style="display:flex;gap:12px;align-items:flex-end;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Kişi Başı Aylık Aidat (₺)</label>
+            <input type="number" class="form-input" id="aylik-aidat-input" placeholder="0.00" step="0.01">
+          </div>
+          <button class="btn btn-primary" onclick="saveAylikAidat()">Kaydet</button>
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">10 kişi × aylık aidat = toplam aylık beklenen aidat</div>
+      </div>
+      <div class="config-section" style="margin-top:0;">
+        <h3>⚙ Bağlantı</h3>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <div id="sb-status" style="font-size:13px;color:var(--text-muted);">Kontrol ediliyor...</div>
+          <button class="btn btn-secondary btn-sm" onclick="checkConnection()">Yenile</button>
         </div>
       </div>
     </div>
-    <!-- PRE-WORKOUT -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent);margin-bottom:2px;">&#9889; ANTRENMAN / MAÇ ÖNCESİ</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">~150 kcal · Antrenman/maçtan 30 dk önce</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;">
-        <div style="font-size:12px;color:var(--text2);line-height:1.7">1 muz<br>Küçük avuç fındık veya ceviz</div>
-      </div>
-    </div>
-    <!-- AKSAM -->
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-      <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--accent3);margin-bottom:2px;">&#127769; AKŞAM</div>
-      <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">~750–850 kcal · ~55–65g protein · Birini seç</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:5px;">SEÇENEK A — haftada 2–3x</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7">200g tavuk göğsü (ızgara veya fırın)<br>150g pirinç veya bulgur pilavı<br>Yeşil salata</div>
-      </div>
-      <div style="text-align:center;font-size:10px;color:var(--text3);margin:4px 0;letter-spacing:2px;">VEYA</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:8px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:5px;">SEÇENEK B — haftada 1–2x</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7">180g yağsız kıyma veya biftek<br>150g bulgur veya makarna<br>Salata</div>
-      </div>
-      <div style="text-align:center;font-size:10px;color:var(--text3);margin:4px 0;letter-spacing:2px;">VEYA</div>
-      <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:10px;">
-        <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--accent3);margin-bottom:5px;">SEÇENEK C — pratik günler</div>
-        <div style="font-size:12px;color:var(--text2);line-height:1.7">2 kutu ton balığı (160g süzülmüş)<br>Makarna veya pirinç<br>Zeytinyağı + limon</div>
-      </div>
-      <div style="background:rgba(200,240,67,0.06);border:1px solid rgba(200,240,67,0.15);border-radius:8px;padding:10px;">
-        <div style="font-size:11px;color:var(--accent);line-height:1.7">+ Her akşam ekle: 1 porsiyon sebze (brokoli, kabak veya ıspanak) · 1 çay kaşığı zeytinyağı</div>
-      </div>
-    </div>
   </div>
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--accent3)"></div>İpuçları</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-      <div style="font-size:12px;color:var(--text2);line-height:2.1">📦 <b style="color:var(--text)">Haftalık prep:</b> Pazar günü 500g tavuk pişir<br>🐟 <b style="color:var(--text)">Ton balığı:</b> En hızlı protein — stokta bulundur<br>🥣 <b style="color:var(--text)">Ara öğün:</b> Yoğurt veya süzme peynir<br>💊 <b style="color:var(--text)">Kreatin:</b> Her gün sabit, zaman önemli değil<br>⚡ <b style="color:var(--text)">Whey:</b> Sadece antrenman/maç sonrası</div>
+</div>
+
+<!-- MODAL: GELİR EKLE -->
+<div class="modal-overlay" id="modal-gelir">
+  <div class="modal">
+    <div class="modal-title"><span>💰</span> Gelir Ekle</div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" id="g-tarih"></div>
+        <div class="form-group"><label class="form-label">Tutar (₺)</label><input type="number" class="form-input" id="g-tutar" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Gelir Türü</label><select class="form-select" id="g-tur" onchange="onGelirTurChange()"></select></div>
+      <div class="mulk-field" id="g-mulk-group">
+        <label class="form-label">Mülk</label>
+        <select class="form-select" id="g-mulk"><option value="">Mülk seç...</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Açıklama (isteğe bağlı)</label><input type="text" class="form-input" id="g-aciklama" placeholder="Not..."></div>
     </div>
-  </div>
-  <div class="section">
-    <div class="section-title"><div class="dot" style="background:var(--text3)"></div>Geliştirici</div>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Yeni HTML kodunu buraya yapıştır, GitHub'a gönder.</div>
-      <textarea id="update-html" placeholder="Yeni index.html içeriğini buraya yapıştır..." style="width:100%;height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:11px;padding:10px;resize:vertical;font-family:monospace;margin-bottom:10px"></textarea>
-      <button id="deploy-btn" onclick="deployToGitHub()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:12px 24px;border-radius:10px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s">
-        🚀 GitHub'a Gönder
-      </button>
-      <div id="deploy-status" style="font-size:12px;margin-top:10px;min-height:18px"></div>
-      <div style="font-size:10px;color:var(--text3);margin-top:12px;text-align:center;letter-spacing:1px">v1.5</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-gelir')">İptal</button>
+      <button class="btn btn-green" onclick="saveGelir()">Kaydet</button>
     </div>
   </div>
 </div>
 
-<!-- SPORT PICKER SHEET -->
-<div class="sheet-overlay" id="sheet-overlay" onclick="closeSheetIfOutside(event)">
-  <div class="sheet">
-    <div class="sheet-handle"></div>
-    <div class="sheet-title">Spor Seç</div>
-    <div class="sheet-date-label" id="sheet-date-label"></div>
-    <div class="sport-options">
-      <div class="sport-option" id="opt-fitness" onclick="selectSport('fitness')">
-        <div class="sport-opt-icon">🏋️</div>
-        <div class="sport-opt-info"><div class="sport-opt-name">Fitness</div><div class="sport-opt-desc">Ağırlık antrenmanı — Whey + Kreatin + Glutamin + Mg</div></div>
-        <div class="sport-opt-check">✓</div>
+<!-- MODAL: GİDER EKLE -->
+<div class="modal-overlay" id="modal-gider">
+  <div class="modal">
+    <div class="modal-title"><span>📤</span> Gider Ekle</div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" id="gd-tarih"></div>
+        <div class="form-group"><label class="form-label">Tutar (₺)</label><input type="number" class="form-input" id="gd-tutar" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="sport-option" id="opt-hali" onclick="selectSport('hali')">
-        <div class="sport-opt-icon">⚽</div>
-        <div class="sport-opt-info"><div class="sport-opt-name">Halı Saha</div><div class="sport-opt-desc">Maç günü — Whey + Kreatin + Glutamin + Mg</div></div>
-        <div class="sport-opt-check">✓</div>
+      <div class="form-group"><label class="form-label">Gider Türü</label><select class="form-select" id="gd-tur"></select></div>
+      <div class="form-group">
+        <label class="form-label">Mülk (isteğe bağlı)</label>
+        <select class="form-select" id="gd-mulk"><option value="">Mülk seç...</option></select>
       </div>
-      <div class="sport-option" id="opt-bos" onclick="selectSport('bos')">
-        <div class="sport-opt-icon">😴</div>
-        <div class="sport-opt-info"><div class="sport-opt-name">Boş Gün</div><div class="sport-opt-desc">Dinlenme — Kreatin + Glutamin + Mg (Whey yok)</div></div>
-        <div class="sport-opt-check">✓</div>
-      </div>
+      <div class="form-group"><label class="form-label">Açıklama (isteğe bağlı)</label><input type="text" class="form-input" id="gd-aciklama" placeholder="Not..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-gider')">İptal</button>
+      <button class="btn btn-red" onclick="saveGider()">Kaydet</button>
     </div>
   </div>
 </div>
 
-<!-- BOTTOM NAV -->
-<div class="bottom-nav">
-  <button class="nav-btn active" onclick="showPage('today')" id="nav-today">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    Bugün
-  </button>
-  <button class="nav-btn" onclick="showPage('cal')" id="nav-cal">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Takvim
-  </button>
-  <button class="nav-btn" onclick="showPage('week')" id="nav-week">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    Hafta
-  </button>
-  <button class="nav-btn" onclick="showPage('plan')" id="nav-plan">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-    Program
-  </button>
+<!-- MODAL: MÜLK DÜZENLE -->
+<div class="modal-overlay" id="modal-mulk-duzenle">
+  <div class="modal">
+    <div class="modal-title"><span>⌂</span> Mülk Düzenle</div>
+    <div class="modal-body">
+      <input type="hidden" id="md-id">
+      <div class="form-group"><label class="form-label">Mülk Adı</label><input type="text" class="form-input" id="md-ad"></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Alım Bedeli (₺)</label><input type="number" class="form-input" id="md-bedel" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Alım Masrafı (₺)</label><input type="number" class="form-input" id="md-masraf" step="0.01"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Güncel Kira (₺)</label><input type="number" class="form-input" id="md-kira" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Toplam Kira (₺)</label><input type="number" class="form-input" id="md-toplam-kira" step="0.01"></div>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-mulk-duzenle')">İptal</button>
+      <button class="btn btn-primary" onclick="saveMulkDuzenle()">Kaydet</button>
+    </div>
+  </div>
 </div>
+
+<!-- MODAL: İŞLEM DETAY -->
+<div class="modal-overlay" id="modal-islem-detay">
+  <div class="modal">
+    <div class="modal-title"><span>📋</span> İşlem Detayı</div>
+    <div class="modal-body">
+      <input type="hidden" id="det-id">
+      <div style="background:var(--surface2);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--text-muted);font-size:12px;">Tarih</span>
+          <span id="det-tarih" style="font-family:'DM Mono',monospace;font-size:12px;"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--text-muted);font-size:12px;">Tutar</span>
+          <span id="det-tutar" style="font-family:'DM Mono',monospace;font-size:14px;font-weight:600;"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:var(--text-muted);font-size:12px;">Açıklama</span>
+          <span id="det-aciklama" style="font-size:12px;color:var(--text-muted);max-width:260px;text-align:right;"></span>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tip</label>
+          <select class="form-select" id="det-tip-select" onchange="onDetTipChange()">
+            <option value="gelir">Gelir</option>
+            <option value="gider">Gider</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <select class="form-select" id="det-tur-select"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mülk (isteğe bağlı)</label>
+        <select class="form-select" id="det-mulk"><option value="">Mülk seç...</option></select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteIslemFromModal()">Sil</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-islem-detay')">İptal</button>
+      <button class="btn btn-primary" onclick="saveIslemDetay()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
 
 <script>
-// ── CONSTANTS ──────────────────────────────────────────
-const PROTEIN_GOAL = 165;
-const WATER_GOAL   = 10;
-const TR_DAYS   = ['Pazar','Pazartesi','Sal\u0131','\u00c7ar\u015famba','Per\u015fembe','Cuma','Cumartesi'];
-const TR_DAYS_S = ['Pt','Sa','\u00c7a','Pe','Cu','Ct','Pz'];
-const TR_MONTHS = ['Ocak','\u015eubat','Mart','Nisan','May\u0131s','Haziran','Temmuz','A\u011fustos','Eyl\u00fcl','Ekim','Kas\u0131m','Aral\u0131k'];
+const SB_URL = 'https://xsqehferiqsyjbdipdhq.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcWVoZmVyaXFzeWpiZGlwZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NTU1NzQsImV4cCI6MjA5MjQzMTU3NH0.DosyVIc058jy7eax31EJqO8V1M5LJmi35EkCLhOm_54';
 
-// ── GITHUB DATA STORAGE ──────────────────────────────────
-const GH_DATA_API = 'https://api.github.com/repos/' + GH_REPO + '/contents/data.json';
+let sb = null, currentUser = null;
+let aylikAidat = 0;
+const PAGE_SIZE = 50;
+let muhasebeOffset = 0, muhasebeTotal = 0;
+let gelirTurleri = [], giderTurleri = [], mulkler = [];
 
-var cache = {};
-var dataFileSha = null;
+window.addEventListener('DOMContentLoaded', () => {
+  sb = supabase.createClient(SB_URL, SB_KEY);
+  checkSession();
+  const today = new Date().toISOString().split('T')[0];
+  ['g-tarih','gd-tarih'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
+  const d90 = new Date(); d90.setDate(d90.getDate()-90);
+  document.getElementById('filter-start').value = d90.toISOString().split('T')[0];
+  document.getElementById('filter-end').value = today;
+  updateDateDisplay('filter-start');
+  updateDateDisplay('filter-end');
+});
 
-function emptyDay() {
-  return { sport: null, meals: {}, supps: {}, water: 0 };
+async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) { currentUser = session.user; showApp(); }
+  else document.getElementById('login-screen').classList.add('visible');
 }
 
-function todayKey() { return dateKey(new Date()); }
-function dateKey(d) {
-  var y   = d.getFullYear();
-  var m   = String(d.getMonth() + 1).padStart(2, '0');
-  var day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
-}
-function parseKey(k) {
-  var p = k.split('-').map(Number);
-  return new Date(p[0], p[1]-1, p[2], 12, 0, 0);
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  currentUser = data.user;
+  document.getElementById('login-screen').classList.remove('visible');
+  showApp();
 }
 
-async function loadAllData() {
-  if (Object.keys(cache).length > 0) return;
+async function doLogout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').classList.add('visible');
+}
+
+function showApp() {
+  document.getElementById('app').classList.add('visible');
+  const email = currentUser?.email || '?';
+  document.getElementById('user-name').textContent = email.split('@')[0];
+  document.getElementById('user-avatar').textContent = email[0].toUpperCase();
+  loadAll();
+}
+
+async function loadAll() {
+  await Promise.all([loadTurler(), loadMulkler(), loadAyarlar()]);
+  loadDashboard();
+  loadMuhasebe();
+}
+
+async function loadTurler() {
+  const { data } = await sb.from('islem_turleri').select('*').order('ad');
+  if (!data) return;
+  gelirTurleri = data.filter(t => t.tip === 'gelir');
+  giderTurleri = data.filter(t => t.tip === 'gider');
+  populateTurSelects();
+  renderKonfigTurler();
+}
+
+async function loadMulkler() {
+  const { data } = await sb.from('mulkler').select('*').order('created_at');
+  if (!data) return;
+  // Gider toplamlarını hesapla
+  const { data: giderler } = await sb.from('islemler')
+    .select('mulk_id, tutar')
+    .eq('tip', 'gider')
+    .not('mulk_id', 'is', null);
+  const giderMap = {};
+  (giderler||[]).forEach(g => {
+    giderMap[g.mulk_id] = (giderMap[g.mulk_id]||0) + (parseFloat(g.tutar)||0);
+  });
+  // Kira toplamlarını hesapla
+  const kiraId = gelirTurleri.find(t => /kira/i.test(t.ad))?.id;
+  const kiraMap = {};
+  const maxKiraMap = {};
+  if (kiraId) {
+    const { data: kiralar } = await sb.from('islemler')
+      .select('mulk_id, tutar, tarih')
+      .eq('tip', 'gelir')
+      .eq('tur_id', kiraId)
+      .not('mulk_id', 'is', null)
+      .order('tarih', { ascending: false });
+    (kiralar||[]).forEach(k => {
+      kiraMap[k.mulk_id] = (kiraMap[k.mulk_id]||0) + (parseFloat(k.tutar)||0);
+    });
+    // Her mülk için en son kira kaydını bul (güncel kira)
+    const seen = new Set();
+    (kiralar||[]).forEach(k => {
+      if (!seen.has(k.mulk_id)) {
+        maxKiraMap[k.mulk_id] = parseFloat(k.tutar)||0;
+        seen.add(k.mulk_id);
+      }
+    });
+  }
+  mulkler = data.map(m => ({
+    ...m,
+    hesaplanan_masraf: giderMap[m.id]||0,
+    hesaplanan_toplam_kira: kiraMap[m.id]||0,
+    hesaplanan_guncel_kira: maxKiraMap[m.id]||0,
+  }));
+  renderMulkler();
+  renderKonfigMulkler();
+  populateMulkSelects();
+}
+
+function populateTurSelects() {
+  document.getElementById('g-tur').innerHTML = gelirTurleri.map(t => `<option value="${t.id}" data-ad="${t.ad}">${t.ad}</option>`).join('');
+  document.getElementById('gd-tur').innerHTML = giderTurleri.map(t => `<option value="${t.id}">${t.ad}</option>`).join('');
+  const all = [...gelirTurleri, ...giderTurleri];
+  document.getElementById('filter-kategori').innerHTML = '<option value="">Tüm Kategoriler</option>' + all.map(t => `<option value="${t.id}">${t.ad}</option>`).join('');
+  onGelirTurChange();
+}
+
+function populateMulkSelects() {
+  const opts = '<option value="">Mülk seç...</option>' + mulkler.map(m => `<option value="${m.id}">${m.ad}</option>`).join('');
+  ['g-mulk','gd-mulk','det-mulk'].forEach(id => { const el = document.getElementById(id); if(el) el.innerHTML = opts; });
+  document.getElementById('filter-mulk').innerHTML = '<option value="">Tüm Mülkler</option>' + mulkler.map(m => `<option value="${m.id}">${m.ad}</option>`).join('');
+}
+
+function onGelirTurChange() {
+  const sel = document.getElementById('g-tur');
+  const ad = sel.options[sel.selectedIndex]?.dataset?.ad || '';
+  const grp = document.getElementById('g-mulk-group');
+  if (/kira/i.test(ad)) grp.classList.add('visible');
+  else grp.classList.remove('visible');
+}
+
+async function loadDashboard() {
+  const { data } = await sb.from('islemler').select('tip, tur_id, tutar');
+  if (!data) return;
+  const gelirTurMap = {}; gelirTurleri.forEach(t => gelirTurMap[t.id] = t.ad);
+  let bakiye=0, totalAidat=0, totalFaiz=0, totalKira=0, totalGider=0;
+  data.forEach(r => {
+    const t = parseFloat(r.tutar)||0;
+    if (r.tip==='gelir') {
+      bakiye += t;
+      const a = gelirTurMap[r.tur_id]||'';
+      if (/aidat/i.test(a)) totalAidat+=t;
+      else if (/faiz/i.test(a)) totalFaiz+=t;
+      else if (/kira/i.test(a)) totalKira+=t;
+    } else { bakiye-=t; totalGider+=t; }
+  });
+  document.getElementById('kpi-bakiye').textContent = fmt(bakiye);
+  document.getElementById('kpi-aidat').textContent = fmt(totalAidat);
+  document.getElementById('kpi-faiz').textContent = fmt(totalFaiz);
+  document.getElementById('kpi-kira').textContent = fmt(totalKira);
+  document.getElementById('kpi-gider').textContent = fmt(totalGider);
+  document.getElementById('kpi-mulk').textContent = mulkler.length;
+  // Aylık kira = tüm mülklerin hesaplanan güncel kirası toplamı
+  const aylikKiraTop = mulkler.reduce((s,m) => s + (m.hesaplanan_guncel_kira||0), 0);
+  document.getElementById('kpi-aylik-kira').textContent = fmt(aylikKiraTop);
+  const { data: recent } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').order('tarih',{ascending:false}).limit(10);
+  renderRecentTable(recent||[]);
+}
+
+function renderRecentTable(rows) {
+  const tbody = document.getElementById('recent-tbody');
+  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><p>Henüz işlem yok</p></div></td></tr>`; return; }
+  tbody.innerHTML = rows.map(r => `<tr onclick="openIslemDetay('${r.id}')">
+    <td class="mono">${fmtDate(r.tarih)}</td>
+    <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
+    <td>${r.islem_turleri?.ad||'—'}</td>
+    <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'}">${r.tip==='gelir'?'+':'−'} ${fmt(r.tutar)}</td>
+    <td>${r.mulkler?.ad?`<span class="badge badge-blue">${r.mulkler.ad}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
+    <td style="color:var(--text-muted);font-size:12px;">${r.aciklama||''}</td>
+  </tr>`).join('');
+}
+
+async function loadMuhasebe() {
+  const start = document.getElementById('filter-start').value;
+  const end = document.getElementById('filter-end').value;
+  const typeFilter = document.getElementById('filter-type').value;
+  const katFilter = document.getElementById('filter-kategori').value;
+  const mulkFilter = document.getElementById('filter-mulk').value;
+  let query = sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)',{count:'exact'});
+  if (start) query = query.gte('tarih', start);
+  if (end) query = query.lte('tarih', end);
+  if (typeFilter) query = query.eq('tip', typeFilter);
+  if (katFilter) query = query.eq('tur_id', katFilter);
+  if (mulkFilter) query = query.eq('mulk_id', mulkFilter);
+  query = query.order('tarih',{ascending:false}).order('created_at',{ascending:false});
+  query = query.range(muhasebeOffset, muhasebeOffset+PAGE_SIZE-1);
+  const { data, count, error } = await query;
+  if (error) { showToast('Veri hatası: '+error.message,'error'); return; }
+  muhasebeTotal = count||0;
+  document.getElementById('muhasebe-count').textContent = `${muhasebeTotal} kayıt`;
+  renderMuhasebeTable(data||[]);
+  renderPagination();
+}
+
+function renderMuhasebeTable(rows) {
+  const tbody = document.getElementById('muhasebe-tbody');
+  if (!rows.length) { tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>Kayıt yok</p></div></td></tr>`; document.getElementById('muhasebe-summary').textContent=''; return; }
+  let tg=0, td=0;
+  tbody.innerHTML = rows.map(r => {
+    const t = parseFloat(r.tutar)||0;
+    if (r.tip==='gelir') tg+=t; else td+=t;
+    return `<tr onclick="openIslemDetay('${r.id}')">
+      <td class="mono">${fmtDate(r.tarih)}</td>
+      <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
+      <td>${r.islem_turleri?.ad||'—'}</td>
+      <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'};font-weight:600;">${r.tip==='gelir'?'+':'−'} ${fmt(t)}</td>
+      <td class="mono" style="color:var(--text-muted);">${r.bakiye!=null?fmt(r.bakiye):'—'}</td>
+      <td>${r.mulkler?.ad?`<span class="badge badge-blue">${r.mulkler.ad}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
+      <td style="color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(r.aciklama||'').replace(/"/g,'&quot;')}">${r.aciklama||''}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-danger btn-sm" onclick="deleteIslem('${r.id}')">Sil</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('muhasebe-summary').innerHTML = `<span style="color:var(--green)">+${fmt(tg)}</span> &nbsp;|&nbsp; <span style="color:var(--red)">−${fmt(td)}</span> &nbsp;|&nbsp; <span style="color:var(--accent)">Net: ${fmt(tg-td)}</span>`;
+}
+
+function renderPagination() {
+  const container = document.getElementById('muhasebe-pagination');
+  const totalPages = Math.ceil(muhasebeTotal/PAGE_SIZE);
+  const cur = Math.floor(muhasebeOffset/PAGE_SIZE);
+  if (totalPages<=1) { container.innerHTML=''; return; }
+  let html='';
+  if (cur>0) html+=`<button class="page-btn" onclick="goPage(${cur-1})">‹</button>`;
+  for(let i=Math.max(0,cur-2);i<Math.min(totalPages,cur+3);i++) html+=`<button class="page-btn ${i===cur?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+  if (cur<totalPages-1) html+=`<button class="page-btn" onclick="goPage(${cur+1})">›</button>`;
+  container.innerHTML = html;
+}
+
+function goPage(p) { muhasebeOffset=p*PAGE_SIZE; loadMuhasebe(); }
+
+function renderMulkler() {
+  const html = mulkler.length ? mulkler.map(m => `
+    <div class="property-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+        <div class="property-name">${m.ad}</div>
+        <button class="btn btn-secondary btn-sm" onclick="openMulkDuzenle('${m.id}')">Düzenle</button>
+      </div>
+      <div class="property-row"><span class="lbl">Alım Bedeli</span><span class="val">${m.bedel?fmt(m.bedel):'—'} ₺</span></div>
+      <div class="property-row"><span class="lbl">Alım Masrafı</span><span class="val">${m.alim_masrafi?fmt(m.alim_masrafi):'—'} ₺</span></div>
+      <div class="property-row"><span class="lbl">Toplam Masraf</span><span class="val">${fmt(m.hesaplanan_masraf)} ₺</span></div>
+      <div class="property-row"><span class="lbl">Güncel Kira</span><span class="val green">${m.hesaplanan_guncel_kira?fmt(m.hesaplanan_guncel_kira)+' ₺':'—'}</span></div>
+      <div class="property-row"><span class="lbl">Toplam Kira</span><span class="val">${m.hesaplanan_toplam_kira?fmt(m.hesaplanan_toplam_kira)+' ₺':'—'}</span></div>
+    </div>`) .join('') : `<div class="empty"><div class="empty-icon">🏠</div><p>Mülk eklenmemiş</p></div>`;
+  document.getElementById('properties-grid').innerHTML = html;
+  document.getElementById('mulkler-grid').innerHTML = html;
+}
+
+function renderKonfigTurler() {
+  document.getElementById('gelir-turleri-list').innerHTML = gelirTurleri.length
+    ? gelirTurleri.map(t=>`<div class="type-item"><span class="type-name">${t.ad}</span><button class="btn btn-danger btn-sm" onclick="deleteTur('${t.id}')">Sil</button></div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Tür eklenmemiş</div>';
+  document.getElementById('gider-turleri-list').innerHTML = giderTurleri.length
+    ? giderTurleri.map(t=>`<div class="type-item"><span class="type-name">${t.ad}</span><button class="btn btn-danger btn-sm" onclick="deleteTur('${t.id}')">Sil</button></div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Tür eklenmemiş</div>';
+}
+
+function renderKonfigMulkler() {
+  document.getElementById('mulk-list').innerHTML = mulkler.length
+    ? mulkler.map(m=>`<div class="type-item">
+        <span class="type-name">${m.ad} <span style="color:var(--text-muted);font-size:11px;font-family:'DM Mono',monospace;">${m.bedel?'— '+fmt(m.bedel)+' ₺':''}</span></span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="openMulkDuzenle('${m.id}')">Düzenle</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteMulk('${m.id}')">Sil</button>
+        </div>
+      </div>`).join('')
+    : '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Mülk eklenmemiş</div>';
+}
+
+async function saveGelir() {
+  const tarih = document.getElementById('g-tarih').value;
+  const tur_id = document.getElementById('g-tur').value;
+  const tutar = parseFloat(document.getElementById('g-tutar').value);
+  const aciklama = document.getElementById('g-aciklama').value.trim() || null;
+  const mulk_id = document.getElementById('g-mulk').value || null;
+  if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
+  const { error } = await sb.from('islemler').insert({ tarih, tip:'gelir', tur_id, tutar, aciklama, mulk_id });
+  if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
+  // Kira/gider değerleri artık islemlerden otomatik hesaplanıyor
+  showToast('Gelir kaydedildi ✓','success');
+  closeModal('modal-gelir');
+  document.getElementById('g-tutar').value=''; document.getElementById('g-aciklama').value='';
+  await loadMulkler(); loadDashboard(); loadMuhasebe();
+}
+
+async function saveGider() {
+  const tarih = document.getElementById('gd-tarih').value;
+  const tur_id = document.getElementById('gd-tur').value;
+  const tutar = parseFloat(document.getElementById('gd-tutar').value);
+  const aciklama = document.getElementById('gd-aciklama').value.trim() || null;
+  const mulk_id = document.getElementById('gd-mulk').value || null;
+  if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
+  const { error } = await sb.from('islemler').insert({ tarih, tip:'gider', tur_id, tutar, aciklama, mulk_id });
+  if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
+  // Masraf değerleri artık islemlerden otomatik hesaplanıyor
+  showToast('Gider kaydedildi ✓','success');
+  closeModal('modal-gider');
+  document.getElementById('gd-tutar').value=''; document.getElementById('gd-aciklama').value='';
+  await loadMulkler(); loadDashboard(); loadMuhasebe();
+}
+
+async function deleteIslem(id) {
+  if (!confirm('Bu kaydı silmek istediğinden emin misin?')) return;
+  const { error } = await sb.from('islemler').delete().eq('id', id);
+  if (error) { showToast('Silme hatası: '+error.message,'error'); return; }
+  showToast('Kayıt silindi','success');
+  loadDashboard(); loadMuhasebe();
+}
+
+function onDetTipChange() {
+  const tip = document.getElementById('det-tip-select').value;
+  const turSel = document.getElementById('det-tur-select');
+  const turler = tip === 'gelir' ? gelirTurleri : giderTurleri;
+  turSel.innerHTML = turler.map(t => `<option value="${t.id}">${t.ad}</option>`).join('');
+}
+
+async function openIslemDetay(id) {
+  const { data } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').eq('id',id).single();
+  if (!data) return;
+  document.getElementById('det-id').value = id;
+  document.getElementById('det-tarih').textContent = fmtDate(data.tarih);
+  document.getElementById('det-tutar').textContent = (data.tip==='gelir'?'+ ':'− ')+fmt(data.tutar)+' ₺';
+  document.getElementById('det-tutar').style.color = data.tip==='gelir'?'var(--green)':'var(--red)';
+  document.getElementById('det-aciklama').textContent = data.aciklama||'—';
+  document.getElementById('det-tip-select').value = data.tip;
+  onDetTipChange();
+  document.getElementById('det-tur-select').value = data.tur_id||'';
+  document.getElementById('det-mulk').value = data.mulk_id||'';
+  openModal('modal-islem-detay');
+}
+
+async function saveIslemDetay() {
+  const id = document.getElementById('det-id').value;
+  const tip = document.getElementById('det-tip-select').value;
+  const tur_id = document.getElementById('det-tur-select').value || null;
+  const mulk_id = document.getElementById('det-mulk').value || null;
+  const { error } = await sb.from('islemler').update({ tip, tur_id, mulk_id }).eq('id', id);
+  if (error) { showToast('Güncelleme hatası: '+error.message,'error'); return; }
+  showToast('Kayıt güncellendi ✓','success');
+  closeModal('modal-islem-detay');
+  loadDashboard(); loadMuhasebe();
+}
+
+async function deleteIslemFromModal() {
+  const id = document.getElementById('det-id').value;
+  if (!confirm('Bu kaydı silmek istediğinden emin misin?')) return;
+  const { error } = await sb.from('islemler').delete().eq('id', id);
+  if (error) { showToast('Silme hatası: '+error.message,'error'); return; }
+  showToast('Kayıt silindi','success');
+  closeModal('modal-islem-detay');
+  loadDashboard(); loadMuhasebe();
+}
+
+function openMulkDuzenle(id) {
+  const m = mulkler.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('md-id').value = m.id;
+  document.getElementById('md-ad').value = m.ad||'';
+  document.getElementById('md-bedel').value = m.bedel||'';
+  document.getElementById('md-masraf').value = m.alim_masrafi||'';
+  document.getElementById('md-kira').value = m.guncel_kira||'';
+  document.getElementById('md-toplam-kira').value = m.toplam_kira||'';
+
+  openModal('modal-mulk-duzenle');
+}
+
+async function saveMulkDuzenle() {
+  const id = document.getElementById('md-id').value;
+  const updates = {
+    ad: document.getElementById('md-ad').value.trim(),
+    bedel: parseFloat(document.getElementById('md-bedel').value)||null,
+    alim_masrafi: parseFloat(document.getElementById('md-masraf').value)||null,
+    guncel_kira: parseFloat(document.getElementById('md-kira').value)||null,
+    toplam_kira: parseFloat(document.getElementById('md-toplam-kira').value)||null,
+
+  };
+  if (!updates.ad) { showToast('Mülk adı zorunludur.','error'); return; }
+  const { error } = await sb.from('mulkler').update(updates).eq('id', id);
+  if (error) { showToast('Güncelleme hatası: '+error.message,'error'); return; }
+  showToast('Mülk güncellendi ✓','success');
+  closeModal('modal-mulk-duzenle');
+  await loadMulkler(); loadDashboard();
+}
+
+async function addTur(tip) {
+  const id = tip==='gelir'?'new-gelir-turu':'new-gider-turu';
+  const ad = document.getElementById(id).value.trim();
+  if (!ad) return;
+  const { error } = await sb.from('islem_turleri').insert({ ad, tip });
+  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  document.getElementById(id).value='';
+  showToast('Tür eklendi ✓','success');
+  await loadTurler();
+}
+
+async function deleteTur(id) {
+  if (!confirm('Bu türü silmek istediğinden emin misin?')) return;
+  const { error } = await sb.from('islem_turleri').delete().eq('id', id);
+  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  showToast('Tür silindi','success');
+  await loadTurler();
+}
+
+async function addMulk() {
+  const ad = document.getElementById('new-mulk-adi').value.trim();
+  if (!ad) return;
+  const bedel = parseFloat(document.getElementById('new-mulk-bedel').value)||null;
+  const alim_masrafi = parseFloat(document.getElementById('new-mulk-masraf').value)||null;
+  const guncel_kira = parseFloat(document.getElementById('new-mulk-kira').value)||null;
+  const { error } = await sb.from('mulkler').insert({ ad, bedel, alim_masrafi, guncel_kira });
+  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  ['new-mulk-adi','new-mulk-bedel','new-mulk-masraf','new-mulk-kira'].forEach(id => document.getElementById(id).value='');
+  showToast('Mülk eklendi ✓','success');
+  await loadMulkler();
+}
+
+async function deleteMulk(id) {
+  if (!confirm('Bu mülkü silmek istediğinden emin misin?')) return;
+  const { error } = await sb.from('mulkler').delete().eq('id', id);
+  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  showToast('Mülk silindi','success');
+  await loadMulkler();
+}
+
+async function loadAyarlar() {
+  const { data } = await sb.from('ayarlar').select('*').eq('anahtar', 'aylik_aidat').single();
+  if (data) {
+    aylikAidat = parseFloat(data.deger)||0;
+    const input = document.getElementById('aylik-aidat-input');
+    if (input) input.value = aylikAidat||'';
+  }
+  updateAylikAidatKPI();
+}
+
+function updateAylikAidatKPI() {
+  const el = document.getElementById('kpi-aylik-aidat');
+  const sub = document.getElementById('kpi-aylik-aidat-sub');
+  if (!el) return;
+  if (aylikAidat > 0) {
+    el.textContent = fmt(aylikAidat);
+    if (sub) sub.textContent = '10 kişi → ' + fmt(aylikAidat * 10) + ' ₺/ay';
+  } else {
+    el.textContent = '—';
+    if (sub) sub.textContent = 'Kişi başı';
+  }
+}
+
+async function saveAylikAidat() {
+  const tutar = parseFloat(document.getElementById('aylik-aidat-input').value);
+  if (isNaN(tutar) || tutar <= 0) { showToast('Geçerli bir tutar gir.', 'error'); return; }
+  const { error } = await sb.from('ayarlar').upsert({ anahtar: 'aylik_aidat', deger: String(tutar) }, { onConflict: 'anahtar' });
+  if (error) { showToast('Kayıt hatası: '+error.message, 'error'); return; }
+  aylikAidat = tutar;
+  updateAylikAidatKPI();
+  showToast('Aylık aidat kaydedildi ✓', 'success');
+}
+
+async function checkConnection() {
   try {
-    var res = await fetch(GH_DATA_API, {
-      headers: { 'Authorization': 'token ' + GH_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
-    });
-    var file = await res.json();
-    dataFileSha = file.sha;
-    var decoded = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
-    Object.keys(decoded).forEach(function(k) {
-      var d = decoded[k];
-      if (!d.meals) d.meals = {};
-      if (!d.supps) d.supps = {};
-      cache[k] = d;
-    });
+    const { error } = await sb.from('islemler').select('id',{count:'exact',head:true});
+    document.getElementById('sb-status').innerHTML = error
+      ? `<span style="color:var(--red)">✗ ${error.message}</span>`
+      : `<span style="color:var(--green)">✓ Bağlantı başarılı</span>`;
   } catch(e) {
-    console.error('loadAllData error', e);
+    document.getElementById('sb-status').innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
   }
 }
 
-async function getDayData(key) {
-  await loadAllData();
-  if (!cache[key]) cache[key] = emptyDay();
-  return cache[key];
-}
-
-async function saveDayData(key, data) {
-  cache[key] = data;
-  try {
-    if (!dataFileSha) {
-      var infoRes = await fetch(GH_DATA_API, {
-        headers: { 'Authorization': 'token ' + GH_TOKEN, 'Accept': 'application/vnd.github.v3+json' }
-      });
-      var info = await infoRes.json();
-      dataFileSha = info.sha;
-    }
-    var encoded = btoa(unescape(encodeURIComponent(JSON.stringify(cache, null, 2))));
-    var pushRes = await fetch(GH_DATA_API, {
-      method: 'PUT',
-      headers: {
-        'Authorization': 'token ' + GH_TOKEN,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: key + ' guncellendi',
-        content: encoded,
-        sha: dataFileSha
-      })
-    });
-    var result = await pushRes.json();
-    if (result.content) dataFileSha = result.content.sha;
-  } catch(e) {
-    console.error('saveDayData error', e);
-  }
-}
-
-async function loadRange(keys) {
-  await loadAllData();
-  keys.forEach(function(k) { if (!cache[k]) cache[k] = emptyDay(); });
-}
-
-
-var cache = {};
-
-function emptyDay() {
-  return { sport: null, meals: {}, supps: {}, water: 0, proteinMap: {} };
-}
-
-function todayKey() { return dateKey(new Date()); }
-function dateKey(d) {
-  var y   = d.getFullYear();
-  var m   = String(d.getMonth() + 1).padStart(2, '0');
-  var day = String(d.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + day;
-}
-function parseKey(k) {
-  var p = k.split('-').map(Number);
-  return new Date(p[0], p[1]-1, p[2], 12, 0, 0);
-}
-
-  } catch(e) {
-    missing.forEach(function(k) { if (!cache[k]) cache[k] = emptyDay(); });
-  }
-}
-
-// ── SPORT / MEAL / SUPP CONFIG ──────────────────────────
-const SPORT_INFO = {
-  fitness: { label: '\ud83c\udfcb\ufe0f Fitness',    cls: 'fitness' },
-  hali:    { label: '\u26bd Hal\u0131 Saha',         cls: 'hali' },
-  bos:     { label: '\ud83d\ude34 Bo\u015f G\u00fcn', cls: 'bos' },
-};
-function getSportInfo(sport) { return SPORT_INFO[sport] || { label: '\u2014 Girilmedi', cls: 'unknown' }; }
-
-const MEALS_CONFIG = {
-  fitness: [
-    { id:'oglen',
-      time:'☀️ 12:00 — Öğlen',
-      name:'Ana Öğün 1',
-      desc:'4 yumurta (haşlanmış/omlet) · 2 dilim tam buğday ekmek · domates, salatalık · 1 kase yulaf ezmesi (sütle) + 1 muz · 1 bardak süt veya 150g yoğurt',
-      p:'~45g', k:'~55g', kcal:'~750' },
-    { id:'prework',
-      time:'⚡ Antrenman Öncesi',
-      name:'Pre-Workout',
-      desc:'1 muz + küçük avuç fındık veya ceviz (antrenmandan 30 dk önce)',
-      p:'~3g', k:'~30g', kcal:'~150' },
-    { id:'aksam',
-      time:'🌙 18:00–19:00 — Akşam',
-      name:'Ana Öğün 2',
-      desc:'A) 200g tavuk göğsü + 150g pirinç/bulgur + yeşil salata  •  B) 180g kıyma/biftek + 150g bulgur/makarna + salata  •  C) 2 kutu ton balığı + makarna + zeytinyağı + limon  — Her akşam: sebze + zeytinyağı',
-      p:'~60g', k:'~60g', kcal:'~800' },
-  ],
-  hali: [
-    { id:'oglen',
-      time:'☀️ 12:00 — Öğlen',
-      name:'Ana Öğün 1',
-      desc:'4 yumurta (haşlanmış/omlet) · 2 dilim tam buğday ekmek · domates, salatalık · 1 kase yulaf ezmesi (sütle) + 1 muz · 1 bardak süt veya 150g yoğurt',
-      p:'~45g', k:'~55g', kcal:'~750' },
-    { id:'prework',
-      time:'⚡ Maç Öncesi',
-      name:'Pre-Match',
-      desc:'1 muz + küçük avuç fındık veya ceviz (maçtan 30 dk önce)',
-      p:'~3g', k:'~30g', kcal:'~150' },
-    { id:'aksam',
-      time:'🌙 18:00–19:00 — Akşam',
-      name:'Ana Öğün 2',
-      desc:'A) 200g tavuk göğsü + 150g pirinç/bulgur + yeşil salata  •  B) 180g kıyma/biftek + 150g bulgur/makarna + salata  •  C) 2 kutu ton balığı + makarna + zeytinyağı + limon  — Her akşam: sebze + zeytinyağı',
-      p:'~60g', k:'~60g', kcal:'~800' },
-  ],
-  bos: [
-    { id:'oglen',
-      time:'☀️ 12:00 — Öğlen',
-      name:'Ana Öğün 1',
-      desc:'3 yumurta omlet (içine 30g kaşar veya lor) · 2 dilim tam buğday ekmek · söğüş (domates, salatalık, zeytin) · 1 bardak kefir veya yoğurt',
-      p:'~40g', k:'~45g', kcal:'~600' },
-    { id:'aksam',
-      time:'🌙 18:00–19:00 — Akşam',
-      name:'Ana Öğün 2',
-      desc:'A) 200g tavuk göğsü + 150g pirinç/bulgur + yeşil salata  •  B) 180g kıyma/biftek + 150g bulgur/makarna + salata  •  C) 2 kutu ton balığı + makarna + zeytinyağı + limon  — Her akşam: sebze + zeytinyağı',
-      p:'~55g', k:'~55g', kcal:'~750' },
-  ],
-  null: [
-    { id:'oglen',
-      time:'☀️ 12:00 — Öğlen',
-      name:'Ana Öğün 1',
-      desc:'Spor günü girilmedi — program sekmesinden bugünün sporunu belirle',
-      p:'—', k:'—', kcal:'—' },
-    { id:'aksam',
-      time:'🌙 18:00–19:00 — Akşam',
-      name:'Ana Öğün 2',
-      desc:'Spor günü girilmedi — program sekmesinden bugünün sporunu belirle',
-      p:'—', k:'—', kcal:'—' },
-  ],
-};
-
-const SUPPS_ALL = [
-  { id:'kreatin',  icon:'💪', name:'Kreatin',      dose:'5g',              time:'Her gün • sabah veya öğlenle',       activeFor:['fitness','hali','bos',null], protein:0  },
-  { id:'bcaa',     icon:'⚡', name:'BCAA',          dose:'Antrenman dozu',  time:'Antrenman/maç sırasında',            activeFor:['fitness','hali'],            protein:5  },
-  { id:'whey',     icon:'🥤', name:'Whey Protein',  dose:'30g (~1 ölçek)',  time:'Antrenman/maç sonrası 30 dk',        activeFor:['fitness','hali'],            protein:25 },
-  { id:'glutamin', icon:'🔄', name:'Glutamin',       dose:'5g',             time:'Akşam yemeği sonrası',               activeFor:['fitness','hali','bos',null], protein:0  },
-  { id:'mag',      icon:'😴', name:'Magnezyum',      dose:'Biglisinat',     time:'Uyku öncesi 30–60 dk',               activeFor:['fitness','hali','bos',null], protein:0  },
-];
-
-// ── RENDER TODAY ────────────────────────────────────────
-function showLoading(show) {
-  var el = document.getElementById('today-loading');
-  if (el) el.style.display = show ? 'block' : 'none';
-}
-
-async function renderToday() {
-  const key = todayKey();
-  showLoading(true);
-  const data = await getDayData(key);
-  showLoading(false);
-  const sport = data.sport;
-
-  // Date
-  const now = new Date();
-  document.getElementById('date-display').textContent =
-    TR_DAYS[now.getDay()] + ', ' + now.getDate() + ' ' + TR_MONTHS[now.getMonth()];
-
-  // Sport badge
-  const si = getSportInfo(sport);
-  document.getElementById('today-sport-badge').innerHTML =
-    '<span class="sport-badge ' + si.cls + '">' + si.label + '</span>';
-
-  renderMeals(sport, data, key);
-  renderSupps(sport, data, key);
-  renderProtein(data, sport);
-  renderWater(data, key);
-}
-
-function chk() {
-  return '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-}
-
-function renderMeals(sport, data, key) {
-  const meals = MEALS_CONFIG[sport] || MEALS_CONFIG[null];
-  const c = document.getElementById('meals-container');
-  c.innerHTML = '';
-  meals.forEach(function(m) {
-    var checked = !!data.meals[m.id];
-    var div = document.createElement('div');
-    div.className = 'meal-card' + (checked ? ' checked' : '');
-    div.setAttribute('data-meal', m.id);
-    div.onclick = function() { toggleMeal(m.id, key); };
-    div.innerHTML =
-      '<div class="meal-top">' +
-        '<div class="meal-info">' +
-          '<div class="meal-time">' + m.time + '</div>' +
-          '<div class="meal-name">' + m.name + '</div>' +
-          '<div class="meal-desc">' + m.desc + '</div>' +
-        '</div>' +
-        '<div class="check-circle">' + chk() + '</div>' +
-      '</div>' +
-      '<div class="meal-macros">' +
-        '<div class="macro"><div class="macro-val" style="color:var(--accent)">' + m.p + '</div><div class="macro-key">Protein</div></div>' +
-        '<div class="macro"><div class="macro-val">' + m.k + '</div><div class="macro-key">Karb</div></div>' +
-        '<div class="macro"><div class="macro-val">' + m.kcal + '</div><div class="macro-key">kcal</div></div>' +
-      '</div>';
-    c.appendChild(div);
-  });
-}
-
-function renderSupps(sport, data, key) {
-  var c = document.getElementById('supps-container');
-  c.innerHTML = '';
-  SUPPS_ALL.forEach(function(s) {
-    var isActive = s.activeFor.indexOf(sport) !== -1;
-    var checked  = !!data.supps[s.id];
-    var div = document.createElement('div');
-    div.className = 'supp-card' + (checked ? ' checked' : '') + (!isActive ? ' inactive' : '');
-    if (isActive) {
-      var sid = s.id, k = key;
-      div.onclick = function() { toggleSupp(sid, k); };
-    }
-    div.innerHTML =
-      '<div class="supp-icon">' + s.icon + '</div>' +
-      '<div class="supp-name">' + s.name + '</div>' +
-      '<div class="supp-dose">' + s.dose + '</div>' +
-      '<div class="supp-time">' + (isActive ? s.time : '\u2014 Bu g\u00fcn yok') + '</div>' +
-      '<div class="supp-check"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5 3.5-4" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
-    c.appendChild(div);
-  });
-}
-
-// ── TOGGLES ─────────────────────────────────────────────
-async function toggleMeal(id, key) {
-  var data = await getDayData(key);
-  data.meals[id] = !data.meals[id];
-  await saveDayData(key, data);
-  renderToday(); // protein bar da renderToday içinde güncellenir
-}
-async function toggleSupp(id, key) {
-  var data = await getDayData(key);
-  data.supps[id] = !data.supps[id];
-  await saveDayData(key, data);
-  renderToday();
-}
-// toggleSource removed — protein from meals
-
-// ── PROTEIN ─────────────────────────────────────────────
-function renderProtein(data, sport) {
-  var total = 0;
-  // Öğünlerden protein
-  var meals = MEALS_CONFIG[sport] || MEALS_CONFIG[null];
-  meals.forEach(function(m) {
-    if (data.meals && data.meals[m.id]) {
-      var match = m.p.match(/\d+/);
-      if (match) total += parseInt(match[0]);
-    }
-  });
-  // Takviyelerden protein (whey, bcaa)
-  SUPPS_ALL.forEach(function(s) {
-    if (s.protein && data.supps && data.supps[s.id]) {
-      total += s.protein;
-    }
-  });
-  var pct = Math.min(100, Math.round(total / PROTEIN_GOAL * 100));
-  document.getElementById('protein-current').textContent = total;
-  document.getElementById('protein-bar').style.width = pct + '%';
-}
-
-// ── WATER ───────────────────────────────────────────────
-function renderWater(data, key) {
-  var w = data.water || 0;
-  document.getElementById('water-count').textContent = w;
-  var c = document.getElementById('water-cups');
-  c.innerHTML = '';
-  for (var i = 0; i < WATER_GOAL; i++) {
-    var cup = document.createElement('div');
-    cup.className = 'water-cup' + (i < w ? ' filled' : '');
-    cup.textContent = '\ud83d\udca7';
-    (function(idx) {
-      cup.onclick = async function() {
-        var d2 = await getDayData(key);
-        d2.water = idx < (d2.water||0) ? idx : idx + 1;
-        await saveDayData(key, d2);
-        renderWater(d2, key);
-      };
-    })(i);
-    c.appendChild(cup);
-  }
-}
-
-// ── SHEET ────────────────────────────────────────────────
-var sheetKey = null;
-
-function openSheet(key) {
-  sheetKey = key;
-  var d = parseKey(key);
-  document.getElementById('sheet-date-label').textContent =
-    TR_DAYS[d.getDay()] + ', ' + d.getDate() + ' ' + TR_MONTHS[d.getMonth()] + ' ' + d.getFullYear();
-  var sport = getDayData(key).sport;
-  ['fitness','hali','bos'].forEach(function(t) {
-    document.getElementById('opt-' + t).className =
-      'sport-option' + (sport === t ? ' sel-' + t : '');
-  });
-  document.getElementById('sheet-overlay').classList.add('open');
-}
-
-function closeSheet() {
-  document.getElementById('sheet-overlay').classList.remove('open');
-  sheetKey = null;
-}
-
-function closeSheetIfOutside(e) {
-  if (e.target === document.getElementById('sheet-overlay')) closeSheet();
-}
-
-async function selectSport(type) {
-  if (!sheetKey) return;
-  var wasKey = sheetKey;
-  var data = await getDayData(wasKey);
-  data.sport = type;
-  await saveDayData(wasKey, data);
-  closeSheet();
-  renderToday();
-  if (document.getElementById('page-cal').classList.contains('active')) renderCal();
-}
-
-// ── CALENDAR ─────────────────────────────────────────────
-var calYear, calMonth;
-
-function initCal() {
-  var now  = new Date();
-  calYear  = now.getFullYear();
-  calMonth = now.getMonth();
-}
-
-function calPrevMonth() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCal(); }
-function calNextMonth() { calMonth++; if (calMonth > 11) { calMonth = 0;  calYear++; } renderCal(); }
-
-async function renderCal() {
-  document.getElementById('cal-month-label').textContent = TR_MONTHS[calMonth] + ' ' + calYear;
-  var list = document.getElementById('cal-list');
-  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">Y\u00fckleniyor...</div>';
-  var days = new Date(calYear, calMonth + 1, 0).getDate();
-  var tk   = todayKey();
-
-  // Collect keys we need
-  var keysNeeded = [];
-  for (var d = 1; d <= days; d++) {
-    var dk = dateKey(new Date(calYear, calMonth, d));
-    if (dk >= tk) keysNeeded.push(dk);
-  }
-  // Batch load
-  await loadRange(keysNeeded);
-
-  list.innerHTML = '';
-  for (var d = 1; d <= days; d++) {
-    var date  = new Date(calYear, calMonth, d);
-    var key   = dateKey(date);
-    if (key < tk) continue;
-    var isToday = key === tk;
-    var dayData = cache[key] || emptyDay();
-    var si = getSportInfo(dayData.sport);
-
-    var row = document.createElement('div');
-    row.className = 'cal-day-row' + (isToday ? ' today-row' : '');
-    (function(k) { row.onclick = function() { openSheet(k); }; })(key);
-
-    row.innerHTML =
-      '<div class="cal-day-num' + (isToday ? ' today-num' : '') + '">' + d + '</div>' +
-      '<div class="cal-day-info">' +
-        '<div class="cal-day-name">' + TR_DAYS[date.getDay()] + '</div>' +
-        '<div class="cal-day-sport ' + si.cls + '">' + si.label + '</div>' +
-      '</div>' +
-      '<div class="cal-day-arrow">\u203a</div>';
-
-    list.appendChild(row);
-  }
-}
-
-// ── WEEKLY ───────────────────────────────────────────────
-async function renderWeek() {
-  var grid  = document.getElementById('week-grid');
-  grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px;grid-column:span 7">Y\u00fckleniyor...</div>';
-  var today = new Date();
-  var tk    = todayKey();
-  var dow   = today.getDay();
-  var off   = dow === 0 ? -6 : 1 - dow;
-
-  // Collect week keys and batch load
-  var weekKeys = [];
-  for (var i = 0; i < 7; i++) {
-    var wd = new Date(today);
-    wd.setDate(today.getDate() + off + i);
-    weekKeys.push(dateKey(wd));
-  }
-  await loadRange(weekKeys);
-
-  grid.innerHTML = '';
-  var streak=0, tMeals=0, tSupps=0, tWater=0;
-
-  for (var i = 0; i < 7; i++) {
-    var d = new Date(today);
-    d.setDate(today.getDate() + off + i);
-    var key = dateKey(d);
-    var ds  = cache[key];
-
-    var dayEl = document.createElement('div');
-    dayEl.className = 'week-day';
-
-    var lbl = document.createElement('div');
-    lbl.className = 'week-day-label';
-    lbl.textContent = TR_DAYS_S[i];
-    dayEl.appendChild(lbl);
-
-    var circle = document.createElement('div');
-    circle.className = 'week-day-circle' + (key === tk ? ' today' : '');
-    circle.textContent = d.getDate();
-
-    var score = 0;
-    if (ds) {
-      var meals = Object.values(ds.meals || {}).filter(Boolean).length;
-      var supps = Object.values(ds.supps || {}).filter(Boolean).length;
-      var water = ds.water || 0;
-      tMeals += meals; tSupps += supps; tWater += water;
-      score = Math.round(((meals/2) + (supps/4) + Math.min(water/WATER_GOAL,1)) / 3 * 100);
-
-      // Tamamlandı: o günkü tüm öğünler ve aktif takviyeler işaretlendi mi?
-      var daySport = (ds.sport) || null;
-      var expectedMeals = (MEALS_CONFIG[daySport] || MEALS_CONFIG[null]).length;
-      var activeSuppCount = SUPPS_ALL.filter(function(s) {
-        return s.activeFor.indexOf(daySport) !== -1;
-      }).length;
-      var allMealsDone = meals >= expectedMeals;
-      var allSuppsDone = supps >= activeSuppCount;
-      var completed = allMealsDone && allSuppsDone && daySport !== null;
-
-      if (completed && key < tk) { streak++; circle.classList.add('completed'); circle.textContent = '\u2713'; }
-    }
-    dayEl.appendChild(circle);
-
-    var dot = document.createElement('div');
-    dot.className = 'week-dot' + (score >= 80 ? ' good' : score >= 50 ? ' mid' : '');
-    dayEl.appendChild(dot);
-    grid.appendChild(dayEl);
-  }
-
-  document.getElementById('streak-num').textContent = streak;
-  var ws = Math.round(((tMeals/14) + (tSupps/28) + Math.min(tWater/(WATER_GOAL*7),1)) / 3 * 100);
-  document.getElementById('week-score').textContent = ws + '%';
-  document.getElementById('stat-meals').textContent = tMeals + '/14';
-  document.getElementById('stat-supps').textContent = tSupps + '/35';
-  document.getElementById('stat-water').textContent = (tWater * 0.25).toFixed(1) + 'L';
-}
-
-// ── NAV ──────────────────────────────────────────────────
 function showPage(name) {
-  document.querySelectorAll('.page').forEach(function(p)    { p.classList.remove('active'); });
-  document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-  document.getElementById('page-' + name).classList.add('active');
-  document.getElementById('nav-'  + name).classList.add('active');
-  if (name === 'cal')  renderCal();
-  if (name === 'week') renderWeek();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const titles = { dashboard:'Dashboard', muhasebe:'Muhasebe', mulkler:'Mülkler', konfigurasyon:'Konfigürasyon' };
+  document.getElementById('topbar-title').textContent = titles[name]||name;
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.textContent.trim().startsWith(titles[name]?.slice(0,4))) n.classList.add('active'); });
+  const ta = document.getElementById('topbar-actions');
+  if (name==='muhasebe') ta.innerHTML=`<button class="btn btn-green" onclick="openModal('modal-gelir')">+ Gelir Ekle</button><button class="btn btn-red" onclick="openModal('modal-gider')">+ Gider Ekle</button>`;
+  else if (name==='dashboard') ta.innerHTML=`<button class="btn btn-green btn-sm" onclick="openModal('modal-gelir')">+ Gelir</button><button class="btn btn-red btn-sm" onclick="openModal('modal-gider')">+ Gider</button>`;
+  else ta.innerHTML='';
+  if (name==='konfigurasyon') checkConnection();
 }
 
-// ── BOOT ─────────────────────────────────────────────────
-initCal();
-renderToday();
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  const today = new Date().toISOString().split('T')[0];
+  if (id==='modal-gelir') { document.getElementById('g-tarih').value=today; onGelirTurChange(); }
+  if (id==='modal-gider') document.getElementById('gd-tarih').value=today;
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => { if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
+document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
 
-// Service Worker — cache'i bypass et, her zaman network'ten al
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').then(function(reg) {
-      // Her yüklemede güncelleme kontrol et
-      reg.update();
-    }).catch(function(e) {
-      console.log('SW register failed:', e);
-    });
-  });
+function fmt(n) { return (parseFloat(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) {
+  if (!d) return '—';
+  const parts = String(d).split('-');
+  if (parts.length !== 3) return d;
+  return parts[2]+'.'+parts[1]+'.'+parts[0];
+}
+function updateDateDisplay(id) {
+  const val = document.getElementById(id).value;
+  const display = document.getElementById(id+'-display');
+  if (display) display.textContent = val ? fmtDate(val) : 'GG.MM.YYYY';
+}
+// dd.mm.yyyy → yyyy-mm-dd (Supabase sorgusu için)
+function parseDisplayDate(s) {
+  if (!s || s.length < 10) return '';
+  const p = s.split('.');
+  if (p.length !== 3) return s;
+  return p[2]+'-'+p[1]+'-'+p[0];
+}
+// yyyy-mm-dd → dd.mm.yyyy
+function toDisplayDate(s) {
+  if (!s) return '';
+  const p = s.split('-');
+  if (p.length !== 3) return s;
+  return p[2]+'.'+p[1]+'.'+p[0];
 }
 
-// Sync indicator
-var syncTimeout = null;
-var origSave = saveDayData;
-saveDayData = async function(key, data) {
-  var ind = document.getElementById('sync-indicator');
-  if (ind) { ind.textContent = '\u2601\ufe0f Kaydediliyor...'; ind.style.color = 'var(--text3)'; }
-  await origSave(key, data);
-  if (ind) { ind.textContent = '\u2705 Kaydedildi'; ind.style.color = 'var(--green)';
-    clearTimeout(syncTimeout);
-    syncTimeout = setTimeout(function() { ind.textContent = ''; }, 2000);
-  }
-};
+function showToast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className=`toast ${type}`;
+  el.innerHTML=`<span>${type==='success'?'✓':'✗'}</span> ${msg}`;
+  c.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+showPage('dashboard');
 </script>
 </body>
 </html>
