@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.8</title>
+<title>GYO Takip v1.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -178,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.8</div>
+      <div class="version">v1.9</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -878,11 +878,15 @@ async function deleteMulk(id) {
 }
 
 async function loadAyarlar() {
-  const { data } = await sb.from('ayarlar').select('*').eq('anahtar', 'aylik_aidat').single();
-  if (data) {
-    aylikAidat = parseFloat(data.deger)||0;
-    const input = document.getElementById('aylik-aidat-input');
-    if (input) input.value = aylikAidat||'';
+  try {
+    const { data } = await sb.from('ayarlar').select('*').eq('anahtar', 'aylik_aidat').maybeSingle();
+    if (data) {
+      aylikAidat = parseFloat(data.deger)||0;
+      const input = document.getElementById('aylik-aidat-input');
+      if (input) input.value = aylikAidat||'';
+    }
+  } catch(e) {
+    console.warn('ayarlar yüklenemedi:', e.message);
   }
   updateAylikAidatKPI();
 }
