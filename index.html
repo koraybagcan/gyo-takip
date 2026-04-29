@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.9</title>
+<title>GYO Takip v1.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -178,13 +178,13 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.9</div>
+      <div class="version">v1.10</div>
     </div>
     <nav class="nav">
-      <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
-      <div class="nav-item" onclick="showPage('muhasebe')"><span class="icon">⟳</span> Muhasebe</div>
-      <div class="nav-item" onclick="showPage('mulkler')"><span class="icon">⌂</span> Mülkler</div>
-      <div class="nav-item" onclick="showPage('konfigurasyon')"><span class="icon">⚙</span> Konfigürasyon</div>
+      <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
+      <div class="nav-item" onclick="showPage('muhasebe');closeSidebar()"><span class="icon">⟳</span> Muhasebe</div>
+      <div class="nav-item" onclick="showPage('mulkler');closeSidebar()"><span class="icon">⌂</span> Mülkler</div>
+      <div class="nav-item" onclick="showPage('konfigurasyon');closeSidebar()"><span class="icon">⚙</span> Konfigürasyon</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-chip">
@@ -195,9 +195,17 @@
     </div>
   </div>
 
+  <div class="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="main">
     <div class="topbar">
-      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="menu-toggle" onclick="toggleSidebar()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </div>
+        <div class="page-title" id="topbar-title">Dashboard</div>
+      </div>
       <div class="topbar-actions" id="topbar-actions"></div>
     </div>
 
@@ -923,6 +931,20 @@ async function checkConnection() {
   } catch(e) {
     document.getElementById('sb-status').innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
   }
+}
+
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+}
+
+function closeSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  sidebar.classList.remove('open');
+  overlay.style.display = 'none';
 }
 
 function showPage(name) {
