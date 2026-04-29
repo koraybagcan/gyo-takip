@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.7</title>
+<title>GYO Takip v1.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -178,7 +178,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.7</div>
+      <div class="version">v1.8</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard')"><span class="icon">⊞</span> Dashboard</div>
@@ -613,6 +613,8 @@ async function loadMuhasebe() {
   const typeFilter = document.getElementById('filter-type').value;
   const katFilter = document.getElementById('filter-kategori').value;
   const mulkFilter = document.getElementById('filter-mulk').value;
+
+  // Filtreli kayıtlar (sayfalama için)
   let query = sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)',{count:'exact'});
   if (start) query = query.gte('tarih', start);
   if (end) query = query.lte('tarih', end);
@@ -625,7 +627,25 @@ async function loadMuhasebe() {
   if (error) { showToast('Veri hatası: '+error.message,'error'); return; }
   muhasebeTotal = count||0;
   document.getElementById('muhasebe-count').textContent = `${muhasebeTotal} kayıt`;
-  renderMuhasebeTable(data||[]);
+
+  // Bakiye hesabı için tüm kayıtları tarih sırasıyla çek (filtre olmadan)
+  const { data: tumKayitlar } = await sb.from('islemler')
+    .select('id, tarih, tip, tutar, created_at')
+    .order('tarih', {ascending:true})
+    .order('created_at', {ascending:true});
+
+  // Her kayıt için kümülatif bakiye hesapla
+  const bakiyeMap = {};
+  let kumulatif = 0;
+  (tumKayitlar||[]).forEach(r => {
+    const t = parseFloat(r.tutar)||0;
+    kumulatif += r.tip === 'gelir' ? t : -t;
+    bakiyeMap[r.id] = kumulatif;
+  });
+
+  // Gösterilen kayıtlara bakiyeyi ekle
+  const dataWithBakiye = (data||[]).map(r => ({ ...r, hesaplanan_bakiye: bakiyeMap[r.id] }));
+  renderMuhasebeTable(dataWithBakiye);
   renderPagination();
 }
 
@@ -641,7 +661,7 @@ function renderMuhasebeTable(rows) {
       <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
       <td>${r.islem_turleri?.ad||'—'}</td>
       <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'};font-weight:600;">${r.tip==='gelir'?'+':'−'} ${fmt(t)}</td>
-      <td class="mono" style="color:var(--text-muted);">${r.bakiye!=null?fmt(r.bakiye):'—'}</td>
+      <td class="mono" style="color:var(--text-muted);">${r.hesaplanan_bakiye!=null?fmt(r.hesaplanan_bakiye):'—'}</td>
       <td>${r.mulkler?.ad?`<span class="badge badge-blue">${r.mulkler.ad}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
       <td style="color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(r.aciklama||'').replace(/"/g,'&quot;')}">${r.aciklama||''}</td>
       <td onclick="event.stopPropagation()"><button class="btn btn-danger btn-sm" onclick="deleteIslem('${r.id}')">Sil</button></td>
