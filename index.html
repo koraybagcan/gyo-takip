@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="GYO Takip">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>GYO Takip v1.14</title>
+<title>GYO Takip v1.15</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -218,7 +218,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.14</div>
+      <div class="version">v1.15</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
@@ -338,14 +338,18 @@
       </div>
       <div class="config-section" style="margin-top:0;">
         <h3>💳 Aylık Aidat</h3>
-        <div style="display:flex;gap:12px;align-items:flex-end;">
-          <div class="form-group" style="flex:1;">
+        <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end;">
+          <div class="form-group">
             <label class="form-label">Kişi Başı Aylık Aidat (₺)</label>
             <input type="number" class="form-input" id="aylik-aidat-input" placeholder="0.00" step="0.01">
           </div>
-          <button class="btn btn-primary" onclick="saveAylikAidat()">Kaydet</button>
+          <div class="form-group">
+            <label class="form-label">Kişi Sayısı</label>
+            <input type="number" class="form-input" id="kisi-sayisi-input" placeholder="10" min="1" max="100">
+          </div>
+          <button class="btn btn-primary" style="margin-bottom:1px;" onclick="saveAylikAidat()">Kaydet</button>
         </div>
-        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);">10 kişi × aylık aidat = toplam aylık beklenen aidat</div>
+        <div style="margin-top:10px;font-size:12px;color:var(--text-muted);" id="aylik-aidat-aciklama">Kişi sayısı × aylık aidat = toplam aylık beklenen aidat</div>
       </div>
       <div class="config-section" style="margin-top:0;">
         <h3>⚙ Bağlantı</h3>
@@ -482,6 +486,7 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 
 let sb = null, currentUser = null;
 let aylikAidat = 0;
+let kisiSayisi = 10;
 const PAGE_SIZE = 50;
 let muhasebeOffset = 0, muhasebeTotal = 0;
 let gelirTurleri = [], giderTurleri = [], mulkler = [];
@@ -927,12 +932,22 @@ async function deleteMulk(id) {
 
 async function loadAyarlar() {
   try {
-    const { data } = await sb.from('ayarlar').select('*').eq('anahtar', 'aylik_aidat').maybeSingle();
-    if (data) {
-      aylikAidat = parseFloat(data.deger)||0;
-      const input = document.getElementById('aylik-aidat-input');
-      if (input) input.value = aylikAidat||'';
-    }
+    const { data } = await sb.from('ayarlar').select('*').in('anahtar', ['aylik_aidat', 'kisi_sayisi']);
+    (data||[]).forEach(row => {
+      if (row.anahtar === 'aylik_aidat') {
+        aylikAidat = parseFloat(row.deger)||0;
+        const input = document.getElementById('aylik-aidat-input');
+        if (input) input.value = aylikAidat||'';
+      }
+      if (row.anahtar === 'kisi_sayisi') {
+        kisiSayisi = parseInt(row.deger)||10;
+        const input = document.getElementById('kisi-sayisi-input');
+        if (input) input.value = kisiSayisi;
+      }
+    });
+    // kisi_sayisi yoksa default 10 göster
+    const kisInput = document.getElementById('kisi-sayisi-input');
+    if (kisInput && !kisInput.value) kisInput.value = 10;
   } catch(e) {
     console.warn('ayarlar yüklenemedi:', e.message);
   }
@@ -942,24 +957,36 @@ async function loadAyarlar() {
 function updateAylikAidatKPI() {
   const el = document.getElementById('kpi-aylik-aidat');
   const sub = document.getElementById('kpi-aylik-aidat-sub');
+  const aciklama = document.getElementById('aylik-aidat-aciklama');
   if (!el) return;
   if (aylikAidat > 0) {
     el.textContent = fmt(aylikAidat);
-    if (sub) sub.textContent = '10 kişi → ' + fmt(aylikAidat * 10) + ' ₺/ay';
+    if (sub) sub.textContent = kisiSayisi + ' kişi → ' + fmt(aylikAidat * kisiSayisi) + ' ₺/ay';
+    if (aciklama) aciklama.textContent = kisiSayisi + ' kişi × ' + fmt(aylikAidat) + ' ₺ = ' + fmt(aylikAidat * kisiSayisi) + ' ₺/ay';
   } else {
     el.textContent = '—';
     if (sub) sub.textContent = 'Kişi başı';
+    if (aciklama) aciklama.textContent = 'Kişi sayısı × aylık aidat = toplam aylık beklenen aidat';
   }
 }
 
 async function saveAylikAidat() {
   const tutar = parseFloat(document.getElementById('aylik-aidat-input').value);
+  const kisi = parseInt(document.getElementById('kisi-sayisi-input').value)||10;
   if (isNaN(tutar) || tutar <= 0) { showToast('Geçerli bir tutar gir.', 'error'); return; }
-  const { error } = await sb.from('ayarlar').upsert({ anahtar: 'aylik_aidat', deger: String(tutar) }, { onConflict: 'anahtar' });
+  if (kisi < 1) { showToast('Geçerli bir kişi sayısı gir.', 'error'); return; }
+  const { error } = await sb.from('ayarlar').upsert(
+    [
+      { anahtar: 'aylik_aidat', deger: String(tutar) },
+      { anahtar: 'kisi_sayisi', deger: String(kisi) }
+    ],
+    { onConflict: 'anahtar' }
+  );
   if (error) { showToast('Kayıt hatası: '+error.message, 'error'); return; }
   aylikAidat = tutar;
+  kisiSayisi = kisi;
   updateAylikAidatKPI();
-  showToast('Aylık aidat kaydedildi ✓', 'success');
+  showToast('Ayarlar kaydedildi ✓', 'success');
 }
 
 async function checkConnection() {
