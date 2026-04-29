@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GYO Takip v1.12</title>
+<title>GYO Takip v1.13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -157,11 +157,38 @@
   .mulk-field { display:none; }
   .mulk-field.visible { display:flex; flex-direction:column; gap:5px; }
 
-  /* HAMBURGER MENU */
-  .menu-toggle { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:var(--radius); background:var(--surface2); border:1px solid var(--border); cursor:pointer; flex-shrink:0; transition:background .15s; }
-  .menu-toggle:hover { background:var(--surface3); }
+  
+
+  /* ── RESPONSIVE ── */
+  .menu-toggle {
+    display: none;
+    align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: var(--radius);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    cursor: pointer; flex-shrink: 0;
+    transition: background .15s;
+  }
+  .menu-toggle:hover { background: var(--surface3); }
   .menu-toggle svg { width:18px; height:18px; stroke:var(--text-muted); fill:none; stroke-width:2; stroke-linecap:round; }
   .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; }
+
+  @media (max-width: 768px) {
+    .menu-toggle { display: flex; }
+    .sidebar {
+      transform: translateX(-220px);
+      transition: transform .25s;
+      box-shadow: 4px 0 24px rgba(0,0,0,.5);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .main { margin-left: 0; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .topbar { padding: 0 16px; }
+    .page { padding: 16px; }
+    .form-row { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -184,7 +211,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.12</div>
+      <div class="version">v1.13</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
@@ -943,14 +970,14 @@ function toggleSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   const isOpen = sidebar.classList.toggle('open');
-  overlay.style.display = isOpen ? 'block' : 'none';
+  overlay.classList.toggle('open', isOpen);
 }
 
 function closeSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
   sidebar.classList.remove('open');
-  overlay.style.display = 'none';
+  overlay.classList.remove('open');
 }
 
 function showPage(name) {
