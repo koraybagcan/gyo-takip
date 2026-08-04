@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="GYO Takip">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>GYO Takip v2.2</title>
+<title>GYO Takip v2.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -201,7 +201,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v2.2</div>
+      <div class="version">v2.3</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
@@ -592,8 +592,11 @@ async function loadMulkler() {
   const kiraId = gelirTurleri.find(t => /kira/i.test(t.ad))?.id;
   const kiraMap = {}, maxKiraMap = {};
   if (kiraId) {
+    console.log('Kira ID aranıyor:', kiraId);
     const kiraSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gelir'), where('turId','==',kiraId)));
+    console.log('Kira snap boyutu:', kiraSnap.size);
     const kiralar = kiraSnap.docs.map(docToObj).filter(k => k.mulkId);
+    console.log('mulkId olan kira sayısı:', kiralar.length, kiralar.map(k => ({tarih:k.tarih, tutar:k.tutar, mulkId:k.mulkId})));
     kiralar.forEach(k => {
       kiraMap[k.mulkId] = (kiraMap[k.mulkId]||0) + (parseFloat(k.tutar)||0);
     });
@@ -602,6 +605,9 @@ async function loadMulkler() {
     kiralar.forEach(k => {
       if (!seen.has(k.mulkId)) { maxKiraMap[k.mulkId] = parseFloat(k.tutar)||0; seen.add(k.mulkId); }
     });
+    console.log('kiraMap:', kiraMap, 'maxKiraMap:', maxKiraMap);
+  } else {
+    console.warn('Kira türü bulunamadı! gelirTurleri:', gelirTurleri.map(t=>t.ad));
   }
 
   mulkler = data.map(m => ({
