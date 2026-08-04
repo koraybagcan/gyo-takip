@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="GYO Takip">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>GYO Takip v1.15</title>
+<title>GYO Takip v1.17</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -218,7 +218,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.15</div>
+      <div class="version">v1.17</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
@@ -350,6 +350,18 @@
           <button class="btn btn-primary" style="margin-bottom:1px;" onclick="saveAylikAidat()">Kaydet</button>
         </div>
         <div style="margin-top:10px;font-size:12px;color:var(--text-muted);" id="aylik-aidat-aciklama">Kişi sayısı × aylık aidat = toplam aylık beklenen aidat</div>
+      </div>
+      <div class="config-section" style="margin-top:0;">
+        <h3>💾 Yedekleme</h3>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="font-size:13px;color:var(--text-muted);">Tüm muhasebe ve mülk verilerini JSON formatında indir. Düzenli yedek almanı öneririz.</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="yedekal()">⬇ JSON Yedek Al</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('restore-input').click()">⬆ Yedek Yükle</button>
+            <input type="file" id="restore-input" accept=".json" style="display:none" onchange="yedekyukle(this)">
+          </div>
+          <div id="yedek-status" style="font-size:12px;color:var(--text-dim);"></div>
+        </div>
       </div>
       <div class="config-section" style="margin-top:0;">
         <h3>⚙ Bağlantı</h3>
@@ -589,8 +601,10 @@ async function loadMulkler() {
   mulkler = data.map(m => ({
     ...m,
     hesaplanan_masraf: giderMap[m.id]||0,
-    hesaplanan_toplam_kira: kiraMap[m.id]||0,
-    hesaplanan_guncel_kira: maxKiraMap[m.id]||0,
+    // Muhasebede kira varsa oradan, yoksa manuel girilen değeri kullan
+    hesaplanan_toplam_kira: kiraMap[m.id] != null ? kiraMap[m.id] : (m.toplam_kira||0),
+    hesaplanan_guncel_kira: maxKiraMap[m.id] != null ? maxKiraMap[m.id] : (m.guncel_kira||0),
+    kira_kaynagi: kiraMap[m.id] != null ? 'islem' : 'manuel',
   }));
   renderMulkler();
   renderKonfigMulkler();
@@ -987,6 +1001,126 @@ async function saveAylikAidat() {
   kisiSayisi = kisi;
   updateAylikAidatKPI();
   showToast('Ayarlar kaydedildi ✓', 'success');
+}
+
+async function yedekal() {
+  try {
+    const statusEl = document.getElementById('yedek-status');
+    statusEl.textContent = 'Veriler çekiliyor...';
+
+    const [islemlerRes, mulklerRes, turlerRes, ayarlarRes] = await Promise.all([
+      sb.from('islemler').select('*, islem_turleri(ad)').order('tarih', {ascending:true}),
+      sb.from('mulkler').select('*').order('created_at'),
+      sb.from('islem_turleri').select('*').order('ad'),
+      sb.from('ayarlar').select('*'),
+    ]);
+
+    const yedek = {
+      versiyon: '1.0',
+      tarih: new Date().toISOString(),
+      islemler: islemlerRes.data || [],
+      mulkler: mulklerRes.data || [],
+      islem_turleri: turlerRes.data || [],
+      ayarlar: ayarlarRes.data || [],
+    };
+
+    const blob = new Blob([JSON.stringify(yedek, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const tarihStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `gyo-takip-yedek-${tarihStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    const toplamKayit = (islemlerRes.data||[]).length;
+    statusEl.textContent = `✓ Yedek alındı — ${toplamKayit} işlem, ${(mulklerRes.data||[]).length} mülk`;
+    statusEl.style.color = 'var(--green)';
+  } catch(e) {
+    const statusEl = document.getElementById('yedek-status');
+    statusEl.textContent = '✗ Hata: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+  }
+}
+
+async function yedekyukle(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const statusEl = document.getElementById('yedek-status');
+
+  try {
+    const text = await file.text();
+    const yedek = JSON.parse(text);
+
+    if (!yedek.islemler || !yedek.mulkler) {
+      statusEl.textContent = '✗ Geçersiz yedek dosyası';
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
+
+    const onay = confirm(
+      `Bu işlem mevcut tüm verilerin üzerine yazacak!
+
+` +
+      `Yedek tarihi: ${new Date(yedek.tarih).toLocaleString('tr-TR')}
+` +
+      `İşlem sayısı: ${yedek.islemler.length}
+` +
+      `Mülk sayısı: ${yedek.mulkler.length}
+
+` +
+      `Devam etmek istiyor musun?`
+    );
+    if (!onay) { input.value = ''; return; }
+
+    statusEl.textContent = 'Yükleniyor...';
+    statusEl.style.color = 'var(--text-muted)';
+
+    // Mevcut verileri sil
+    await sb.from('islemler').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('mulkler').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    await sb.from('islem_turleri').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+
+    // Türleri yükle
+    if (yedek.islem_turleri?.length) {
+      const turler = yedek.islem_turleri.map(({id, ad, tip, created_at}) => ({id, ad, tip, created_at}));
+      await sb.from('islem_turleri').insert(turler);
+    }
+
+    // Mülkleri yükle
+    if (yedek.mulkler?.length) {
+      const mulkData = yedek.mulkler.map(({id, ad, bedel, alim_masrafi, guncel_kira, toplam_kira, masraf_toplam, created_at}) =>
+        ({id, ad, bedel, alim_masrafi, guncel_kira, toplam_kira, masraf_toplam, created_at}));
+      await sb.from('mulkler').insert(mulkData);
+    }
+
+    // İşlemleri yükle (50'şer chunk halinde)
+    if (yedek.islemler?.length) {
+      const islemData = yedek.islemler.map(({id, tarih, tip, tur_id, tutar, bakiye, aciklama, mulk_id, created_at}) =>
+        ({id, tarih, tip, tur_id, tutar, bakiye, aciklama, mulk_id, created_at}));
+      for (let i = 0; i < islemData.length; i += 50) {
+        await sb.from('islemler').insert(islemData.slice(i, i+50));
+      }
+    }
+
+    // Ayarları yükle
+    if (yedek.ayarlar?.length) {
+      for (const ayar of yedek.ayarlar) {
+        await sb.from('ayarlar').upsert({anahtar: ayar.anahtar, deger: ayar.deger}, {onConflict:'anahtar'});
+      }
+    }
+
+    statusEl.textContent = `✓ Yedek yüklendi — ${yedek.islemler.length} işlem, ${yedek.mulkler.length} mülk`;
+    statusEl.style.color = 'var(--green)';
+    input.value = '';
+
+    // Sayfayı yenile
+    setTimeout(() => loadAll(), 500);
+  } catch(e) {
+    statusEl.textContent = '✗ Hata: ' + e.message;
+    statusEl.style.color = 'var(--red)';
+    input.value = '';
+  }
 }
 
 async function checkConnection() {
