@@ -580,7 +580,7 @@ async function loadMulkler() {
   const data = snap.docs.map(docToObj);
 
   // Gider toplamları
-  const giderSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gider'), where('mulkId','!=',null)));
+  const giderSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gider')));
   const giderMap = {};
   giderSnap.docs.forEach(d => {
     const r = d.data();
@@ -591,8 +591,8 @@ async function loadMulkler() {
   const kiraId = gelirTurleri.find(t => /kira/i.test(t.ad))?.id;
   const kiraMap = {}, maxKiraMap = {};
   if (kiraId) {
-    const kiraSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gelir'), where('turId','==',kiraId), where('mulkId','!=',null), orderBy('mulkId'), orderBy('tarih','desc')));
-    const kiralar = kiraSnap.docs.map(docToObj);
+    const kiraSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gelir'), where('turId','==',kiraId)));
+    const kiralar = kiraSnap.docs.map(docToObj).filter(k => k.mulkId);
     kiralar.forEach(k => {
       kiraMap[k.mulkId] = (kiraMap[k.mulkId]||0) + (parseFloat(k.tutar)||0);
     });
@@ -684,7 +684,7 @@ async function loadDashboard() {
   document.getElementById('kpi-aylik-kira').textContent = fmt(aylikKiraTop);
 
   // Son 10 işlem
-  const recentSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','desc'), orderBy('createdAt','desc'), limit(10)));
+  const recentSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','desc'), limit(10)));
   const recent = recentSnap.docs.map(docToObj);
   const turMap = {}; [...gelirTurleri,...giderTurleri].forEach(t => turMap[t.id]=t.ad);
   const mulkMap = {}; mulkler.forEach(m => mulkMap[m.id]=m.ad);
@@ -706,7 +706,7 @@ function renderRecentTable(rows, turMap, mulkMap) {
 
 async function loadMuhasebe() {
   // Tüm işlemleri çek (bakiye hesabı için)
-  const allSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','asc'), orderBy('createdAt','asc')));
+  const allSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','asc')));
   tumIslemler = allSnap.docs.map(docToObj);
 
   // Bakiye map
