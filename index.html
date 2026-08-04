@@ -10,10 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="GYO Takip">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>GYO Takip v1.17</title>
+<title>GYO Takip v2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg:#0f0e0c; --surface:#181714; --surface2:#211f1b; --surface3:#2a2722;
@@ -159,42 +158,26 @@
   .date-picker-wrap { position:relative; display:inline-flex; align-items:center; }
   .date-hidden { position:absolute; opacity:0; pointer-events:none; width:100%; height:100%; top:0; left:0; }
   .date-display { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); padding:6px 10px; color:var(--text); font-size:12px; cursor:pointer; white-space:nowrap; min-width:110px; display:inline-block; transition:border-color .2s; font-family:'DM Mono',monospace; }
-  .date-display:hover { border-color:var(--border2); color:var(--text); }
+  .date-display:hover { border-color:var(--border2); }
 
   .mulk-field { display:none; }
   .mulk-field.visible { display:flex; flex-direction:column; gap:5px; }
 
-  
-
-  /* ── RESPONSIVE ── */
-  .menu-toggle {
-    display: none;
-    align-items: center; justify-content: center;
-    width: 36px; height: 36px;
-    border-radius: var(--radius);
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    cursor: pointer; flex-shrink: 0;
-    transition: background .15s;
-  }
-  .menu-toggle:hover { background: var(--surface3); }
+  .menu-toggle { display:none; align-items:center; justify-content:center; width:36px; height:36px; border-radius:var(--radius); background:var(--surface2); border:1px solid var(--border); cursor:pointer; flex-shrink:0; transition:background .15s; }
+  .menu-toggle:hover { background:var(--surface3); }
   .menu-toggle svg { width:18px; height:18px; stroke:var(--text-muted); fill:none; stroke-width:2; stroke-linecap:round; }
   .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:99; }
 
   @media (max-width: 768px) {
-    .menu-toggle { display: flex; }
-    .sidebar {
-      transform: translateX(-220px);
-      transition: transform .25s;
-      box-shadow: 4px 0 24px rgba(0,0,0,.5);
-    }
-    .sidebar.open { transform: translateX(0); }
-    .sidebar-overlay.open { display: block; }
-    .main { margin-left: 0; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-    .topbar { padding: 0 16px; }
-    .page { padding: 16px; }
-    .form-row { grid-template-columns: 1fr; }
+    .menu-toggle { display:flex; }
+    .sidebar { transform:translateX(-220px); box-shadow:4px 0 24px rgba(0,0,0,.5); }
+    .sidebar.open { transform:translateX(0); }
+    .sidebar-overlay.open { display:block; }
+    .main { margin-left:0; }
+    .kpi-grid { grid-template-columns:1fr 1fr; }
+    .topbar { padding:0 16px; }
+    .page { padding:16px; }
+    .form-row { grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -218,7 +201,7 @@
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="brand">GYO Takip</div>
-      <div class="version">v1.17</div>
+      <div class="version">v2.0</div>
     </div>
     <nav class="nav">
       <div class="nav-item active" onclick="showPage('dashboard');closeSidebar()"><span class="icon">⊞</span> Dashboard</div>
@@ -240,9 +223,7 @@
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:12px;">
         <div class="menu-toggle" onclick="toggleSidebar()">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
+          <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </div>
         <div class="page-title" id="topbar-title">Dashboard</div>
       </div>
@@ -278,11 +259,11 @@
         <div class="table-toolbar">
           <div class="filter-bar">
             <div class="date-picker-wrap">
-              <input type="date" class="filter-input date-hidden" id="filter-start" style="width:130px;" onchange="updateDateDisplay('filter-start')">
+              <input type="date" class="filter-input date-hidden" id="filter-start" onchange="updateDateDisplay('filter-start')">
               <span class="date-display" id="filter-start-display" onclick="document.getElementById('filter-start').showPicker()">GG.MM.YYYY</span>
             </div>
             <div class="date-picker-wrap">
-              <input type="date" class="filter-input date-hidden" id="filter-end" style="width:130px;" onchange="updateDateDisplay('filter-end')">
+              <input type="date" class="filter-input date-hidden" id="filter-end" onchange="updateDateDisplay('filter-end')">
               <span class="date-display" id="filter-end-display" onclick="document.getElementById('filter-end').showPicker()">GG.MM.YYYY</span>
             </div>
             <select class="filter-select" id="filter-type"><option value="">Tümü</option><option value="gelir">Gelir</option><option value="gider">Gider</option></select>
@@ -354,20 +335,13 @@
       <div class="config-section" style="margin-top:0;">
         <h3>💾 Yedekleme</h3>
         <div style="display:flex;flex-direction:column;gap:12px;">
-          <div style="font-size:13px;color:var(--text-muted);">Tüm muhasebe ve mülk verilerini JSON formatında indir. Düzenli yedek almanı öneririz.</div>
+          <div style="font-size:13px;color:var(--text-muted);">Tüm muhasebe ve mülk verilerini JSON formatında indir.</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="yedekal()">⬇ JSON Yedek Al</button>
             <button class="btn btn-secondary" onclick="document.getElementById('restore-input').click()">⬆ Yedek Yükle</button>
             <input type="file" id="restore-input" accept=".json" style="display:none" onchange="yedekyukle(this)">
           </div>
           <div id="yedek-status" style="font-size:12px;color:var(--text-dim);"></div>
-        </div>
-      </div>
-      <div class="config-section" style="margin-top:0;">
-        <h3>⚙ Bağlantı</h3>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div id="sb-status" style="font-size:13px;color:var(--text-muted);">Kontrol ediliyor...</div>
-          <button class="btn btn-secondary btn-sm" onclick="checkConnection()">Yenile</button>
         </div>
       </div>
     </div>
@@ -435,7 +409,6 @@
         <div class="form-group"><label class="form-label">Güncel Kira (₺)</label><input type="number" class="form-input" id="md-kira" step="0.01"></div>
         <div class="form-group"><label class="form-label">Toplam Kira (₺)</label><input type="number" class="form-input" id="md-toplam-kira" step="0.01"></div>
       </div>
-
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-mulk-duzenle')">İptal</button>
@@ -492,20 +465,54 @@
 
 <div id="toast-container"></div>
 
-<script>
-const SB_URL = 'https://xsqehferiqsyjbdipdhq.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzcWVoZmVyaXFzeWpiZGlwZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NTU1NzQsImV4cCI6MjA5MjQzMTU3NH0.DosyVIc058jy7eax31EJqO8V1M5LJmi35EkCLhOm_54';
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, collection, doc, getDocs, getDoc, addDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-let sb = null, currentUser = null;
+const firebaseConfig = {
+  apiKey: "AIzaSyBWewLgQioOsx2Y9dpfVY3llCfpS0JvbqA",
+  authDomain: "gyo-takip.firebaseapp.com",
+  projectId: "gyo-takip",
+  storageBucket: "gyo-takip.firebasestorage.app",
+  messagingSenderId: "118602226378",
+  appId: "1:118602226378:web:14b5a0618d6fdda908b233"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentUser = null;
 let aylikAidat = 0;
 let kisiSayisi = 10;
 const PAGE_SIZE = 50;
-let muhasebeOffset = 0, muhasebeTotal = 0;
+let muhasebeOffset = 0;
+let tumIslemler = []; // muhasebe için tüm kayıtlar (bakiye hesabı + filtre)
 let gelirTurleri = [], giderTurleri = [], mulkler = [];
 
+// ══════════════════════════════════════════
+// HELPERS — Firestore doc → plain object
+// ══════════════════════════════════════════
+function docToObj(d) {
+  return { id: d.id, ...d.data() };
+}
+
+function tsToDate(ts) {
+  if (!ts) return null;
+  if (typeof ts === 'string') return ts;
+  if (ts.toDate) return ts.toDate().toISOString().split('T')[0];
+  return null;
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  sb = supabase.createClient(SB_URL, SB_KEY);
-  checkSession();
   const today = new Date().toISOString().split('T')[0];
   ['g-tarih','gd-tarih'].forEach(id => { const el = document.getElementById(id); if(el) el.value = today; });
   const d90 = new Date(); d90.setDate(d90.getDate()-90);
@@ -515,39 +522,44 @@ window.addEventListener('DOMContentLoaded', () => {
   updateDateDisplay('filter-end');
 });
 
-async function checkSession() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) { currentUser = session.user; showApp(); }
-  else document.getElementById('login-screen').classList.add('visible');
-}
+onAuthStateChanged(auth, user => {
+  if (user) { currentUser = user; showApp(); }
+  else { currentUser = null; document.getElementById('app').classList.remove('visible'); document.getElementById('login-screen').classList.add('visible'); }
+});
 
-async function doLogin() {
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+window.doLogin = async function() {
   const email = document.getElementById('login-email').value.trim();
   const pass = document.getElementById('login-password').value;
   const errEl = document.getElementById('login-error');
   errEl.style.display = 'none';
-  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
-  currentUser = data.user;
-  document.getElementById('login-screen').classList.remove('visible');
-  showApp();
-}
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
+    document.getElementById('login-screen').classList.remove('visible');
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+};
 
-async function doLogout() {
-  await sb.auth.signOut();
-  currentUser = null;
-  document.getElementById('app').classList.remove('visible');
-  document.getElementById('login-screen').classList.add('visible');
-}
+window.doLogout = async function() {
+  await signOut(auth);
+};
 
 function showApp() {
   document.getElementById('app').classList.add('visible');
+  document.getElementById('login-screen').classList.remove('visible');
   const email = currentUser?.email || '?';
   document.getElementById('user-name').textContent = email.split('@')[0];
   document.getElementById('user-avatar').textContent = email[0].toUpperCase();
   loadAll();
 }
 
+// ══════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════
 async function loadAll() {
   await Promise.all([loadTurler(), loadMulkler(), loadAyarlar()]);
   loadDashboard();
@@ -555,60 +567,74 @@ async function loadAll() {
 }
 
 async function loadTurler() {
-  const { data } = await sb.from('islem_turleri').select('*').order('ad');
-  if (!data) return;
-  gelirTurleri = data.filter(t => t.tip === 'gelir');
-  giderTurleri = data.filter(t => t.tip === 'gider');
+  const snap = await getDocs(query(collection(db,'islem_turleri'), orderBy('ad')));
+  const all = snap.docs.map(docToObj);
+  gelirTurleri = all.filter(t => t.tip === 'gelir');
+  giderTurleri = all.filter(t => t.tip === 'gider');
   populateTurSelects();
   renderKonfigTurler();
 }
 
 async function loadMulkler() {
-  const { data } = await sb.from('mulkler').select('*').order('created_at');
-  if (!data) return;
-  // Gider toplamlarını hesapla
-  const { data: giderler } = await sb.from('islemler')
-    .select('mulk_id, tutar')
-    .eq('tip', 'gider')
-    .not('mulk_id', 'is', null);
+  const snap = await getDocs(query(collection(db,'mulkler'), orderBy('createdAt')));
+  const data = snap.docs.map(docToObj);
+
+  // Gider toplamları
+  const giderSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gider'), where('mulkId','!=',null)));
   const giderMap = {};
-  (giderler||[]).forEach(g => {
-    giderMap[g.mulk_id] = (giderMap[g.mulk_id]||0) + (parseFloat(g.tutar)||0);
+  giderSnap.docs.forEach(d => {
+    const r = d.data();
+    if (r.mulkId) giderMap[r.mulkId] = (giderMap[r.mulkId]||0) + (parseFloat(r.tutar)||0);
   });
-  // Kira toplamlarını hesapla
+
+  // Kira toplamları
   const kiraId = gelirTurleri.find(t => /kira/i.test(t.ad))?.id;
-  const kiraMap = {};
-  const maxKiraMap = {};
+  const kiraMap = {}, maxKiraMap = {};
   if (kiraId) {
-    const { data: kiralar } = await sb.from('islemler')
-      .select('mulk_id, tutar, tarih')
-      .eq('tip', 'gelir')
-      .eq('tur_id', kiraId)
-      .not('mulk_id', 'is', null)
-      .order('tarih', { ascending: false });
-    (kiralar||[]).forEach(k => {
-      kiraMap[k.mulk_id] = (kiraMap[k.mulk_id]||0) + (parseFloat(k.tutar)||0);
+    const kiraSnap = await getDocs(query(collection(db,'islemler'), where('tip','==','gelir'), where('turId','==',kiraId), where('mulkId','!=',null), orderBy('mulkId'), orderBy('tarih','desc')));
+    const kiralar = kiraSnap.docs.map(docToObj);
+    kiralar.forEach(k => {
+      kiraMap[k.mulkId] = (kiraMap[k.mulkId]||0) + (parseFloat(k.tutar)||0);
     });
-    // Her mülk için en son kira kaydını bul (güncel kira)
     const seen = new Set();
-    (kiralar||[]).forEach(k => {
-      if (!seen.has(k.mulk_id)) {
-        maxKiraMap[k.mulk_id] = parseFloat(k.tutar)||0;
-        seen.add(k.mulk_id);
-      }
+    kiralar.sort((a,b) => b.tarih > a.tarih ? 1 : -1);
+    kiralar.forEach(k => {
+      if (!seen.has(k.mulkId)) { maxKiraMap[k.mulkId] = parseFloat(k.tutar)||0; seen.add(k.mulkId); }
     });
   }
+
   mulkler = data.map(m => ({
     ...m,
     hesaplanan_masraf: giderMap[m.id]||0,
-    // Muhasebede kira varsa oradan, yoksa manuel girilen değeri kullan
     hesaplanan_toplam_kira: kiraMap[m.id] != null ? kiraMap[m.id] : (m.toplam_kira||0),
     hesaplanan_guncel_kira: maxKiraMap[m.id] != null ? maxKiraMap[m.id] : (m.guncel_kira||0),
-    kira_kaynagi: kiraMap[m.id] != null ? 'islem' : 'manuel',
   }));
+
   renderMulkler();
   renderKonfigMulkler();
   populateMulkSelects();
+}
+
+async function loadAyarlar() {
+  try {
+    const snap = await getDocs(collection(db,'ayarlar'));
+    snap.docs.forEach(d => {
+      const row = d.data();
+      if (d.id === 'aylik_aidat') {
+        aylikAidat = parseFloat(row.deger)||0;
+        const input = document.getElementById('aylik-aidat-input');
+        if (input) input.value = aylikAidat||'';
+      }
+      if (d.id === 'kisi_sayisi') {
+        kisiSayisi = parseInt(row.deger)||10;
+        const input = document.getElementById('kisi-sayisi-input');
+        if (input) input.value = kisiSayisi;
+      }
+    });
+    const kisInput = document.getElementById('kisi-sayisi-input');
+    if (kisInput && !kisInput.value) kisInput.value = 10;
+  } catch(e) { console.warn('ayarlar:', e); }
+  updateAylikAidatKPI();
 }
 
 function populateTurSelects() {
@@ -625,24 +651,24 @@ function populateMulkSelects() {
   document.getElementById('filter-mulk').innerHTML = '<option value="">Tüm Mülkler</option>' + mulkler.map(m => `<option value="${m.id}">${m.ad}</option>`).join('');
 }
 
-function onGelirTurChange() {
+window.onGelirTurChange = function() {
   const sel = document.getElementById('g-tur');
   const ad = sel.options[sel.selectedIndex]?.dataset?.ad || '';
   const grp = document.getElementById('g-mulk-group');
   if (/kira/i.test(ad)) grp.classList.add('visible');
   else grp.classList.remove('visible');
-}
+};
 
 async function loadDashboard() {
-  const { data } = await sb.from('islemler').select('tip, tur_id, tutar');
-  if (!data) return;
+  const snap = await getDocs(collection(db,'islemler'));
+  const data = snap.docs.map(docToObj);
   const gelirTurMap = {}; gelirTurleri.forEach(t => gelirTurMap[t.id] = t.ad);
   let bakiye=0, totalAidat=0, totalFaiz=0, totalKira=0, totalGider=0;
   data.forEach(r => {
     const t = parseFloat(r.tutar)||0;
     if (r.tip==='gelir') {
-      bakiye += t;
-      const a = gelirTurMap[r.tur_id]||'';
+      bakiye+=t;
+      const a = gelirTurMap[r.turId]||'';
       if (/aidat/i.test(a)) totalAidat+=t;
       else if (/faiz/i.test(a)) totalFaiz+=t;
       else if (/kira/i.test(a)) totalKira+=t;
@@ -654,71 +680,80 @@ async function loadDashboard() {
   document.getElementById('kpi-kira').textContent = fmt(totalKira);
   document.getElementById('kpi-gider').textContent = fmt(totalGider);
   document.getElementById('kpi-mulk').textContent = mulkler.length;
-  // Aylık kira = tüm mülklerin hesaplanan güncel kirası toplamı
   const aylikKiraTop = mulkler.reduce((s,m) => s + (m.hesaplanan_guncel_kira||0), 0);
   document.getElementById('kpi-aylik-kira').textContent = fmt(aylikKiraTop);
-  const { data: recent } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').order('tarih',{ascending:false}).limit(10);
-  renderRecentTable(recent||[]);
+
+  // Son 10 işlem
+  const recentSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','desc'), orderBy('createdAt','desc'), limit(10)));
+  const recent = recentSnap.docs.map(docToObj);
+  const turMap = {}; [...gelirTurleri,...giderTurleri].forEach(t => turMap[t.id]=t.ad);
+  const mulkMap = {}; mulkler.forEach(m => mulkMap[m.id]=m.ad);
+  renderRecentTable(recent, turMap, mulkMap);
 }
 
-function renderRecentTable(rows) {
+function renderRecentTable(rows, turMap, mulkMap) {
   const tbody = document.getElementById('recent-tbody');
-  if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><p>Henüz işlem yok</p></div></td></tr>`; return; }
+  if (!rows.length) { tbody.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="empty-icon">📭</div><p>Henüz işlem yok</p></div></td></tr>`; return; }
   tbody.innerHTML = rows.map(r => `<tr onclick="openIslemDetay('${r.id}')">
     <td class="mono">${fmtDate(r.tarih)}</td>
     <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
-    <td>${r.islem_turleri?.ad||'—'}</td>
+    <td>${turMap[r.turId]||'—'}</td>
     <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'}">${r.tip==='gelir'?'+':'−'} ${fmt(r.tutar)}</td>
-    <td>${r.mulkler?.ad?`<span class="badge badge-blue">${r.mulkler.ad}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
+    <td>${r.mulkId&&mulkMap[r.mulkId]?`<span class="badge badge-blue">${mulkMap[r.mulkId]}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
     <td style="color:var(--text-muted);font-size:12px;">${r.aciklama||''}</td>
   </tr>`).join('');
 }
 
 async function loadMuhasebe() {
-  const start = document.getElementById('filter-start').value;
-  const end = document.getElementById('filter-end').value;
-  const typeFilter = document.getElementById('filter-type').value;
-  const katFilter = document.getElementById('filter-kategori').value;
-  const mulkFilter = document.getElementById('filter-mulk').value;
+  // Tüm işlemleri çek (bakiye hesabı için)
+  const allSnap = await getDocs(query(collection(db,'islemler'), orderBy('tarih','asc'), orderBy('createdAt','asc')));
+  tumIslemler = allSnap.docs.map(docToObj);
 
-  // Filtreli kayıtlar (sayfalama için)
-  let query = sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)',{count:'exact'});
-  if (start) query = query.gte('tarih', start);
-  if (end) query = query.lte('tarih', end);
-  if (typeFilter) query = query.eq('tip', typeFilter);
-  if (katFilter) query = query.eq('tur_id', katFilter);
-  if (mulkFilter) query = query.eq('mulk_id', mulkFilter);
-  query = query.order('tarih',{ascending:false}).order('created_at',{ascending:false});
-  query = query.range(muhasebeOffset, muhasebeOffset+PAGE_SIZE-1);
-  const { data, count, error } = await query;
-  if (error) { showToast('Veri hatası: '+error.message,'error'); return; }
-  muhasebeTotal = count||0;
-  document.getElementById('muhasebe-count').textContent = `${muhasebeTotal} kayıt`;
-
-  // Bakiye hesabı için tüm kayıtları tarih sırasıyla çek (filtre olmadan)
-  const { data: tumKayitlar } = await sb.from('islemler')
-    .select('id, tarih, tip, tutar, created_at')
-    .order('tarih', {ascending:true})
-    .order('created_at', {ascending:true});
-
-  // Her kayıt için kümülatif bakiye hesapla
+  // Bakiye map
   const bakiyeMap = {};
   let kumulatif = 0;
-  (tumKayitlar||[]).forEach(r => {
+  tumIslemler.forEach(r => {
     const t = parseFloat(r.tutar)||0;
-    kumulatif += r.tip === 'gelir' ? t : -t;
+    kumulatif += r.tip==='gelir' ? t : -t;
     bakiyeMap[r.id] = kumulatif;
   });
 
-  // Gösterilen kayıtlara bakiyeyi ekle
-  const dataWithBakiye = (data||[]).map(r => ({ ...r, hesaplanan_bakiye: bakiyeMap[r.id] }));
-  renderMuhasebeTable(dataWithBakiye);
-  renderPagination();
+  // Filtrele
+  const start = document.getElementById('filter-start').value;
+  const end = document.getElementById('filter-end').value;
+  const tipFilter = document.getElementById('filter-type').value;
+  const katFilter = document.getElementById('filter-kategori').value;
+  const mulkFilter = document.getElementById('filter-mulk').value;
+
+  let filtered = tumIslemler.filter(r => {
+    if (start && r.tarih < start) return false;
+    if (end && r.tarih > end) return false;
+    if (tipFilter && r.tip !== tipFilter) return false;
+    if (katFilter && r.turId !== katFilter) return false;
+    if (mulkFilter && r.mulkId !== mulkFilter) return false;
+    return true;
+  }).sort((a,b) => b.tarih > a.tarih ? 1 : b.tarih < a.tarih ? -1 : 0);
+
+  const turMap = {}; [...gelirTurleri,...giderTurleri].forEach(t => turMap[t.id]=t.ad);
+  const mulkMap = {}; mulkler.forEach(m => mulkMap[m.id]=m.ad);
+
+  const total = filtered.length;
+  document.getElementById('muhasebe-count').textContent = `${total} kayıt`;
+
+  // Sayfalama
+  const page = filtered.slice(muhasebeOffset, muhasebeOffset+PAGE_SIZE).map(r => ({
+    ...r,
+    hesaplanan_bakiye: bakiyeMap[r.id],
+    turAd: turMap[r.turId]||'—',
+    mulkAd: r.mulkId ? mulkMap[r.mulkId] : null,
+  }));
+
+  renderMuhasebeTable(page, total);
 }
 
-function renderMuhasebeTable(rows) {
+function renderMuhasebeTable(rows, total) {
   const tbody = document.getElementById('muhasebe-tbody');
-  if (!rows.length) { tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>Kayıt yok</p></div></td></tr>`; document.getElementById('muhasebe-summary').textContent=''; return; }
+  if (!rows.length) { tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div><p>Kayıt yok</p></div></td></tr>`; document.getElementById('muhasebe-summary').textContent=''; renderPagination(0); return; }
   let tg=0, td=0;
   tbody.innerHTML = rows.map(r => {
     const t = parseFloat(r.tutar)||0;
@@ -726,20 +761,21 @@ function renderMuhasebeTable(rows) {
     return `<tr onclick="openIslemDetay('${r.id}')">
       <td class="mono">${fmtDate(r.tarih)}</td>
       <td>${r.tip==='gelir'?'<span class="badge badge-green">Gelir</span>':'<span class="badge badge-red">Gider</span>'}</td>
-      <td>${r.islem_turleri?.ad||'—'}</td>
+      <td>${r.turAd}</td>
       <td class="mono" style="color:${r.tip==='gelir'?'var(--green)':'var(--red)'};font-weight:600;">${r.tip==='gelir'?'+':'−'} ${fmt(t)}</td>
       <td class="mono" style="color:var(--text-muted);">${r.hesaplanan_bakiye!=null?fmt(r.hesaplanan_bakiye):'—'}</td>
-      <td>${r.mulkler?.ad?`<span class="badge badge-blue">${r.mulkler.ad}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
+      <td>${r.mulkAd?`<span class="badge badge-blue">${r.mulkAd}</span>`:'<span style="color:var(--text-dim)">—</span>'}</td>
       <td style="color:var(--text-muted);max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${(r.aciklama||'').replace(/"/g,'&quot;')}">${r.aciklama||''}</td>
       <td onclick="event.stopPropagation()"><button class="btn btn-danger btn-sm" onclick="deleteIslem('${r.id}')">Sil</button></td>
     </tr>`;
   }).join('');
   document.getElementById('muhasebe-summary').innerHTML = `<span style="color:var(--green)">+${fmt(tg)}</span> &nbsp;|&nbsp; <span style="color:var(--red)">−${fmt(td)}</span> &nbsp;|&nbsp; <span style="color:var(--accent)">Net: ${fmt(tg-td)}</span>`;
+  renderPagination(total);
 }
 
-function renderPagination() {
+function renderPagination(total) {
   const container = document.getElementById('muhasebe-pagination');
-  const totalPages = Math.ceil(muhasebeTotal/PAGE_SIZE);
+  const totalPages = Math.ceil(total/PAGE_SIZE);
   const cur = Math.floor(muhasebeOffset/PAGE_SIZE);
   if (totalPages<=1) { container.innerHTML=''; return; }
   let html='';
@@ -749,7 +785,7 @@ function renderPagination() {
   container.innerHTML = html;
 }
 
-function goPage(p) { muhasebeOffset=p*PAGE_SIZE; loadMuhasebe(); }
+window.goPage = function(p) { muhasebeOffset=p*PAGE_SIZE; loadMuhasebe(); };
 
 function renderMulkler() {
   const html = mulkler.length ? mulkler.map(m => `
@@ -763,7 +799,7 @@ function renderMulkler() {
       <div class="property-row"><span class="lbl">Toplam Masraf</span><span class="val">${fmt(m.hesaplanan_masraf)} ₺</span></div>
       <div class="property-row"><span class="lbl">Güncel Kira</span><span class="val green">${m.hesaplanan_guncel_kira?fmt(m.hesaplanan_guncel_kira)+' ₺':'—'}</span></div>
       <div class="property-row"><span class="lbl">Toplam Kira</span><span class="val">${m.hesaplanan_toplam_kira?fmt(m.hesaplanan_toplam_kira)+' ₺':'—'}</span></div>
-    </div>`) .join('') : `<div class="empty"><div class="empty-icon">🏠</div><p>Mülk eklenmemiş</p></div>`;
+    </div>`).join('') : `<div class="empty"><div class="empty-icon">🏠</div><p>Mülk eklenmemiş</p></div>`;
   document.getElementById('properties-grid').innerHTML = html;
   document.getElementById('mulkler-grid').innerHTML = html;
 }
@@ -789,91 +825,88 @@ function renderKonfigMulkler() {
     : '<div style="color:var(--text-dim);font-size:12px;padding:8px 0;">Mülk eklenmemiş</div>';
 }
 
-async function saveGelir() {
+// ══════════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════════
+window.saveGelir = async function() {
   const tarih = document.getElementById('g-tarih').value;
-  const tur_id = document.getElementById('g-tur').value;
+  const turId = document.getElementById('g-tur').value;
   const tutar = parseFloat(document.getElementById('g-tutar').value);
   const aciklama = document.getElementById('g-aciklama').value.trim() || null;
-  const mulk_id = document.getElementById('g-mulk').value || null;
-  if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
-  const { error } = await sb.from('islemler').insert({ tarih, tip:'gelir', tur_id, tutar, aciklama, mulk_id });
-  if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
-  // Kira/gider değerleri artık islemlerden otomatik hesaplanıyor
+  const mulkId = document.getElementById('g-mulk').value || null;
+  if (!tarih||!turId||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
+  await addDoc(collection(db,'islemler'), { tarih, tip:'gelir', turId, tutar, aciklama, mulkId, createdAt: serverTimestamp() });
   showToast('Gelir kaydedildi ✓','success');
   closeModal('modal-gelir');
   document.getElementById('g-tutar').value=''; document.getElementById('g-aciklama').value='';
   await loadMulkler(); loadDashboard(); loadMuhasebe();
-}
+};
 
-async function saveGider() {
+window.saveGider = async function() {
   const tarih = document.getElementById('gd-tarih').value;
-  const tur_id = document.getElementById('gd-tur').value;
+  const turId = document.getElementById('gd-tur').value;
   const tutar = parseFloat(document.getElementById('gd-tutar').value);
   const aciklama = document.getElementById('gd-aciklama').value.trim() || null;
-  const mulk_id = document.getElementById('gd-mulk').value || null;
-  if (!tarih||!tur_id||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
-  const { error } = await sb.from('islemler').insert({ tarih, tip:'gider', tur_id, tutar, aciklama, mulk_id });
-  if (error) { showToast('Kayıt hatası: '+error.message,'error'); return; }
-  // Masraf değerleri artık islemlerden otomatik hesaplanıyor
+  const mulkId = document.getElementById('gd-mulk').value || null;
+  if (!tarih||!turId||isNaN(tutar)||tutar<=0) { showToast('Tarih, tür ve tutar zorunludur.','error'); return; }
+  await addDoc(collection(db,'islemler'), { tarih, tip:'gider', turId, tutar, aciklama, mulkId, createdAt: serverTimestamp() });
   showToast('Gider kaydedildi ✓','success');
   closeModal('modal-gider');
   document.getElementById('gd-tutar').value=''; document.getElementById('gd-aciklama').value='';
   await loadMulkler(); loadDashboard(); loadMuhasebe();
-}
+};
 
-async function deleteIslem(id) {
+window.deleteIslem = async function(id) {
   if (!confirm('Bu kaydı silmek istediğinden emin misin?')) return;
-  const { error } = await sb.from('islemler').delete().eq('id', id);
-  if (error) { showToast('Silme hatası: '+error.message,'error'); return; }
+  await deleteDoc(doc(db,'islemler',id));
   showToast('Kayıt silindi','success');
   loadDashboard(); loadMuhasebe();
-}
+};
 
-function onDetTipChange() {
+window.onDetTipChange = function() {
   const tip = document.getElementById('det-tip-select').value;
   const turSel = document.getElementById('det-tur-select');
-  const turler = tip === 'gelir' ? gelirTurleri : giderTurleri;
-  turSel.innerHTML = turler.map(t => `<option value="${t.id}">${t.ad}</option>`).join('');
-}
+  const turler = tip==='gelir' ? gelirTurleri : giderTurleri;
+  turSel.innerHTML = turler.map(t=>`<option value="${t.id}">${t.ad}</option>`).join('');
+};
 
-async function openIslemDetay(id) {
-  const { data } = await sb.from('islemler').select('*, islem_turleri(ad), mulkler(ad)').eq('id',id).single();
-  if (!data) return;
+window.openIslemDetay = async function(id) {
+  const snap = await getDoc(doc(db,'islemler',id));
+  if (!snap.exists()) return;
+  const data = { id: snap.id, ...snap.data() };
   document.getElementById('det-id').value = id;
   document.getElementById('det-tarih').textContent = fmtDate(data.tarih);
   document.getElementById('det-tutar').textContent = (data.tip==='gelir'?'+ ':'− ')+fmt(data.tutar)+' ₺';
   document.getElementById('det-tutar').style.color = data.tip==='gelir'?'var(--green)':'var(--red)';
   document.getElementById('det-aciklama').textContent = data.aciklama||'—';
   document.getElementById('det-tip-select').value = data.tip;
-  onDetTipChange();
-  document.getElementById('det-tur-select').value = data.tur_id||'';
-  document.getElementById('det-mulk').value = data.mulk_id||'';
+  window.onDetTipChange();
+  document.getElementById('det-tur-select').value = data.turId||'';
+  document.getElementById('det-mulk').value = data.mulkId||'';
   openModal('modal-islem-detay');
-}
+};
 
-async function saveIslemDetay() {
+window.saveIslemDetay = async function() {
   const id = document.getElementById('det-id').value;
   const tip = document.getElementById('det-tip-select').value;
-  const tur_id = document.getElementById('det-tur-select').value || null;
-  const mulk_id = document.getElementById('det-mulk').value || null;
-  const { error } = await sb.from('islemler').update({ tip, tur_id, mulk_id }).eq('id', id);
-  if (error) { showToast('Güncelleme hatası: '+error.message,'error'); return; }
+  const turId = document.getElementById('det-tur-select').value || null;
+  const mulkId = document.getElementById('det-mulk').value || null;
+  await updateDoc(doc(db,'islemler',id), { tip, turId, mulkId });
   showToast('Kayıt güncellendi ✓','success');
   closeModal('modal-islem-detay');
   loadDashboard(); loadMuhasebe();
-}
+};
 
-async function deleteIslemFromModal() {
+window.deleteIslemFromModal = async function() {
   const id = document.getElementById('det-id').value;
   if (!confirm('Bu kaydı silmek istediğinden emin misin?')) return;
-  const { error } = await sb.from('islemler').delete().eq('id', id);
-  if (error) { showToast('Silme hatası: '+error.message,'error'); return; }
+  await deleteDoc(doc(db,'islemler',id));
   showToast('Kayıt silindi','success');
   closeModal('modal-islem-detay');
   loadDashboard(); loadMuhasebe();
-}
+};
 
-function openMulkDuzenle(id) {
+window.openMulkDuzenle = function(id) {
   const m = mulkler.find(x=>x.id===id);
   if (!m) return;
   document.getElementById('md-id').value = m.id;
@@ -882,11 +915,10 @@ function openMulkDuzenle(id) {
   document.getElementById('md-masraf').value = m.alim_masrafi||'';
   document.getElementById('md-kira').value = m.guncel_kira||'';
   document.getElementById('md-toplam-kira').value = m.toplam_kira||'';
-
   openModal('modal-mulk-duzenle');
-}
+};
 
-async function saveMulkDuzenle() {
+window.saveMulkDuzenle = async function() {
   const id = document.getElementById('md-id').value;
   const updates = {
     ad: document.getElementById('md-ad').value.trim(),
@@ -894,79 +926,65 @@ async function saveMulkDuzenle() {
     alim_masrafi: parseFloat(document.getElementById('md-masraf').value)||null,
     guncel_kira: parseFloat(document.getElementById('md-kira').value)||null,
     toplam_kira: parseFloat(document.getElementById('md-toplam-kira').value)||null,
-
   };
   if (!updates.ad) { showToast('Mülk adı zorunludur.','error'); return; }
-  const { error } = await sb.from('mulkler').update(updates).eq('id', id);
-  if (error) { showToast('Güncelleme hatası: '+error.message,'error'); return; }
+  await updateDoc(doc(db,'mulkler',id), updates);
   showToast('Mülk güncellendi ✓','success');
   closeModal('modal-mulk-duzenle');
   await loadMulkler(); loadDashboard();
-}
+};
 
-async function addTur(tip) {
-  const id = tip==='gelir'?'new-gelir-turu':'new-gider-turu';
-  const ad = document.getElementById(id).value.trim();
+window.addTur = async function(tip) {
+  const inputId = tip==='gelir'?'new-gelir-turu':'new-gider-turu';
+  const ad = document.getElementById(inputId).value.trim();
   if (!ad) return;
-  const { error } = await sb.from('islem_turleri').insert({ ad, tip });
-  if (error) { showToast('Hata: '+error.message,'error'); return; }
-  document.getElementById(id).value='';
+  await addDoc(collection(db,'islem_turleri'), { ad, tip, createdAt: serverTimestamp() });
+  document.getElementById(inputId).value='';
   showToast('Tür eklendi ✓','success');
   await loadTurler();
-}
+};
 
-async function deleteTur(id) {
+window.deleteTur = async function(id) {
   if (!confirm('Bu türü silmek istediğinden emin misin?')) return;
-  const { error } = await sb.from('islem_turleri').delete().eq('id', id);
-  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  await deleteDoc(doc(db,'islem_turleri',id));
   showToast('Tür silindi','success');
   await loadTurler();
-}
+};
 
-async function addMulk() {
+window.addMulk = async function() {
   const ad = document.getElementById('new-mulk-adi').value.trim();
   if (!ad) return;
-  const bedel = parseFloat(document.getElementById('new-mulk-bedel').value)||null;
-  const alim_masrafi = parseFloat(document.getElementById('new-mulk-masraf').value)||null;
-  const guncel_kira = parseFloat(document.getElementById('new-mulk-kira').value)||null;
-  const { error } = await sb.from('mulkler').insert({ ad, bedel, alim_masrafi, guncel_kira });
-  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  await addDoc(collection(db,'mulkler'), {
+    ad,
+    bedel: parseFloat(document.getElementById('new-mulk-bedel').value)||null,
+    alim_masrafi: parseFloat(document.getElementById('new-mulk-masraf').value)||null,
+    guncel_kira: parseFloat(document.getElementById('new-mulk-kira').value)||null,
+    createdAt: serverTimestamp(),
+  });
   ['new-mulk-adi','new-mulk-bedel','new-mulk-masraf','new-mulk-kira'].forEach(id => document.getElementById(id).value='');
   showToast('Mülk eklendi ✓','success');
   await loadMulkler();
-}
+};
 
-async function deleteMulk(id) {
+window.deleteMulk = async function(id) {
   if (!confirm('Bu mülkü silmek istediğinden emin misin?')) return;
-  const { error } = await sb.from('mulkler').delete().eq('id', id);
-  if (error) { showToast('Hata: '+error.message,'error'); return; }
+  await deleteDoc(doc(db,'mulkler',id));
   showToast('Mülk silindi','success');
   await loadMulkler();
-}
+};
 
-async function loadAyarlar() {
-  try {
-    const { data } = await sb.from('ayarlar').select('*').in('anahtar', ['aylik_aidat', 'kisi_sayisi']);
-    (data||[]).forEach(row => {
-      if (row.anahtar === 'aylik_aidat') {
-        aylikAidat = parseFloat(row.deger)||0;
-        const input = document.getElementById('aylik-aidat-input');
-        if (input) input.value = aylikAidat||'';
-      }
-      if (row.anahtar === 'kisi_sayisi') {
-        kisiSayisi = parseInt(row.deger)||10;
-        const input = document.getElementById('kisi-sayisi-input');
-        if (input) input.value = kisiSayisi;
-      }
-    });
-    // kisi_sayisi yoksa default 10 göster
-    const kisInput = document.getElementById('kisi-sayisi-input');
-    if (kisInput && !kisInput.value) kisInput.value = 10;
-  } catch(e) {
-    console.warn('ayarlar yüklenemedi:', e.message);
-  }
+window.saveAylikAidat = async function() {
+  const tutar = parseFloat(document.getElementById('aylik-aidat-input').value);
+  const kisi = parseInt(document.getElementById('kisi-sayisi-input').value)||10;
+  if (isNaN(tutar)||tutar<=0) { showToast('Geçerli bir tutar gir.','error'); return; }
+  await Promise.all([
+    setDoc(doc(db,'ayarlar','aylik_aidat'), { deger: String(tutar) }),
+    setDoc(doc(db,'ayarlar','kisi_sayisi'), { deger: String(kisi) }),
+  ]);
+  aylikAidat = tutar; kisiSayisi = kisi;
   updateAylikAidatKPI();
-}
+  showToast('Ayarlar kaydedildi ✓','success');
+};
 
 function updateAylikAidatKPI() {
   const el = document.getElementById('kpi-aylik-aidat');
@@ -975,8 +993,8 @@ function updateAylikAidatKPI() {
   if (!el) return;
   if (aylikAidat > 0) {
     el.textContent = fmt(aylikAidat);
-    if (sub) sub.textContent = kisiSayisi + ' kişi → ' + fmt(aylikAidat * kisiSayisi) + ' ₺/ay';
-    if (aciklama) aciklama.textContent = kisiSayisi + ' kişi × ' + fmt(aylikAidat) + ' ₺ = ' + fmt(aylikAidat * kisiSayisi) + ' ₺/ay';
+    if (sub) sub.textContent = kisiSayisi+' kişi → '+fmt(aylikAidat*kisiSayisi)+' ₺/ay';
+    if (aciklama) aciklama.textContent = kisiSayisi+' kişi × '+fmt(aylikAidat)+' ₺ = '+fmt(aylikAidat*kisiSayisi)+' ₺/ay';
   } else {
     el.textContent = '—';
     if (sub) sub.textContent = 'Kişi başı';
@@ -984,171 +1002,104 @@ function updateAylikAidatKPI() {
   }
 }
 
-async function saveAylikAidat() {
-  const tutar = parseFloat(document.getElementById('aylik-aidat-input').value);
-  const kisi = parseInt(document.getElementById('kisi-sayisi-input').value)||10;
-  if (isNaN(tutar) || tutar <= 0) { showToast('Geçerli bir tutar gir.', 'error'); return; }
-  if (kisi < 1) { showToast('Geçerli bir kişi sayısı gir.', 'error'); return; }
-  const { error } = await sb.from('ayarlar').upsert(
-    [
-      { anahtar: 'aylik_aidat', deger: String(tutar) },
-      { anahtar: 'kisi_sayisi', deger: String(kisi) }
-    ],
-    { onConflict: 'anahtar' }
-  );
-  if (error) { showToast('Kayıt hatası: '+error.message, 'error'); return; }
-  aylikAidat = tutar;
-  kisiSayisi = kisi;
-  updateAylikAidatKPI();
-  showToast('Ayarlar kaydedildi ✓', 'success');
-}
-
-async function yedekal() {
+// ══════════════════════════════════════════
+// YEDEKLEME
+// ══════════════════════════════════════════
+window.yedekal = async function() {
+  const statusEl = document.getElementById('yedek-status');
   try {
-    const statusEl = document.getElementById('yedek-status');
     statusEl.textContent = 'Veriler çekiliyor...';
-
-    const [islemlerRes, mulklerRes, turlerRes, ayarlarRes] = await Promise.all([
-      sb.from('islemler').select('*, islem_turleri(ad)').order('tarih', {ascending:true}),
-      sb.from('mulkler').select('*').order('created_at'),
-      sb.from('islem_turleri').select('*').order('ad'),
-      sb.from('ayarlar').select('*'),
+    const [islemSnap, mulkSnap, turSnap, ayarSnap] = await Promise.all([
+      getDocs(query(collection(db,'islemler'), orderBy('tarih','asc'))),
+      getDocs(collection(db,'mulkler')),
+      getDocs(collection(db,'islem_turleri')),
+      getDocs(collection(db,'ayarlar')),
     ]);
-
     const yedek = {
-      versiyon: '1.0',
+      versiyon: '2.0',
       tarih: new Date().toISOString(),
-      islemler: islemlerRes.data || [],
-      mulkler: mulklerRes.data || [],
-      islem_turleri: turlerRes.data || [],
-      ayarlar: ayarlarRes.data || [],
+      islemler: islemSnap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: undefined })),
+      mulkler: mulkSnap.docs.map(d => ({ id: d.id, ...d.data(), createdAt: undefined })),
+      islem_turleri: turSnap.docs.map(d => ({ id: d.id, ...d.data() })),
+      ayarlar: ayarSnap.docs.map(d => ({ id: d.id, ...d.data() })),
     };
-
-    const blob = new Blob([JSON.stringify(yedek, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(yedek, null, 2)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const tarihStr = new Date().toISOString().slice(0,10);
-    a.href = url;
-    a.download = `gyo-takip-yedek-${tarihStr}.json`;
-    a.click();
+    a.href = url; a.download = `gyo-takip-yedek-${new Date().toISOString().slice(0,10)}.json`; a.click();
     URL.revokeObjectURL(url);
-
-    const toplamKayit = (islemlerRes.data||[]).length;
-    statusEl.textContent = `✓ Yedek alındı — ${toplamKayit} işlem, ${(mulklerRes.data||[]).length} mülk`;
+    statusEl.textContent = `✓ Yedek alındı — ${yedek.islemler.length} işlem, ${yedek.mulkler.length} mülk`;
     statusEl.style.color = 'var(--green)';
   } catch(e) {
-    const statusEl = document.getElementById('yedek-status');
-    statusEl.textContent = '✗ Hata: ' + e.message;
+    statusEl.textContent = '✗ Hata: '+e.message;
     statusEl.style.color = 'var(--red)';
   }
-}
+};
 
-async function yedekyukle(input) {
+window.yedekyukle = async function(input) {
   const file = input.files[0];
   if (!file) return;
   const statusEl = document.getElementById('yedek-status');
-
   try {
-    const text = await file.text();
-    const yedek = JSON.parse(text);
+    const yedek = JSON.parse(await file.text());
+    if (!yedek.islemler || !yedek.mulkler) { statusEl.textContent='✗ Geçersiz yedek dosyası'; statusEl.style.color='var(--red)'; return; }
+    const onay = confirm(`Bu işlem mevcut verilerin üzerine yazacak!\n\nYedek tarihi: ${new Date(yedek.tarih).toLocaleString('tr-TR')}\nİşlem: ${yedek.islemler.length}, Mülk: ${yedek.mulkler.length}\n\nDevam etmek istiyor musun?`);
+    if (!onay) { input.value=''; return; }
+    statusEl.textContent = 'Yükleniyor...'; statusEl.style.color = 'var(--text-muted)';
 
-    if (!yedek.islemler || !yedek.mulkler) {
-      statusEl.textContent = '✗ Geçersiz yedek dosyası';
-      statusEl.style.color = 'var(--red)';
-      return;
+    // Türler
+    for (const t of (yedek.islem_turleri||[])) {
+      await setDoc(doc(db,'islem_turleri', t.id), { ad: t.ad, tip: t.tip });
+    }
+    // Mülkler
+    for (const m of yedek.mulkler) {
+      const { id, createdAt, ...rest } = m;
+      await setDoc(doc(db,'mulkler', id), rest);
+    }
+    // İşlemler
+    for (const r of yedek.islemler) {
+      const { id, createdAt, islem_turleri, ...rest } = r;
+      // Supabase yedekten geldiyse alan adlarını dönüştür
+      const fbDoc = {
+        tarih: rest.tarih,
+        tip: rest.tip,
+        turId: rest.turId || rest.tur_id || null,
+        tutar: parseFloat(rest.tutar)||0,
+        aciklama: rest.aciklama||null,
+        mulkId: rest.mulkId || rest.mulk_id || null,
+      };
+      await setDoc(doc(db,'islemler', id), fbDoc);
+    }
+    // Ayarlar
+    for (const a of (yedek.ayarlar||[])) {
+      await setDoc(doc(db,'ayarlar', a.anahtar||a.id), { deger: a.deger });
     }
 
-    const onay = confirm(
-      `Bu işlem mevcut tüm verilerin üzerine yazacak!
-
-` +
-      `Yedek tarihi: ${new Date(yedek.tarih).toLocaleString('tr-TR')}
-` +
-      `İşlem sayısı: ${yedek.islemler.length}
-` +
-      `Mülk sayısı: ${yedek.mulkler.length}
-
-` +
-      `Devam etmek istiyor musun?`
-    );
-    if (!onay) { input.value = ''; return; }
-
-    statusEl.textContent = 'Yükleniyor...';
-    statusEl.style.color = 'var(--text-muted)';
-
-    // Mevcut verileri sil
-    await sb.from('islemler').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await sb.from('mulkler').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    await sb.from('islem_turleri').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-
-    // Türleri yükle
-    if (yedek.islem_turleri?.length) {
-      const turler = yedek.islem_turleri.map(({id, ad, tip, created_at}) => ({id, ad, tip, created_at}));
-      await sb.from('islem_turleri').insert(turler);
-    }
-
-    // Mülkleri yükle
-    if (yedek.mulkler?.length) {
-      const mulkData = yedek.mulkler.map(({id, ad, bedel, alim_masrafi, guncel_kira, toplam_kira, masraf_toplam, created_at}) =>
-        ({id, ad, bedel, alim_masrafi, guncel_kira, toplam_kira, masraf_toplam, created_at}));
-      await sb.from('mulkler').insert(mulkData);
-    }
-
-    // İşlemleri yükle (50'şer chunk halinde)
-    if (yedek.islemler?.length) {
-      const islemData = yedek.islemler.map(({id, tarih, tip, tur_id, tutar, bakiye, aciklama, mulk_id, created_at}) =>
-        ({id, tarih, tip, tur_id, tutar, bakiye, aciklama, mulk_id, created_at}));
-      for (let i = 0; i < islemData.length; i += 50) {
-        await sb.from('islemler').insert(islemData.slice(i, i+50));
-      }
-    }
-
-    // Ayarları yükle
-    if (yedek.ayarlar?.length) {
-      for (const ayar of yedek.ayarlar) {
-        await sb.from('ayarlar').upsert({anahtar: ayar.anahtar, deger: ayar.deger}, {onConflict:'anahtar'});
-      }
-    }
-
-    statusEl.textContent = `✓ Yedek yüklendi — ${yedek.islemler.length} işlem, ${yedek.mulkler.length} mülk`;
+    statusEl.textContent = `✓ Yedek yüklendi — ${yedek.islemler.length} işlem`;
     statusEl.style.color = 'var(--green)';
     input.value = '';
-
-    // Sayfayı yenile
     setTimeout(() => loadAll(), 500);
   } catch(e) {
-    statusEl.textContent = '✗ Hata: ' + e.message;
+    statusEl.textContent = '✗ Hata: '+e.message;
     statusEl.style.color = 'var(--red)';
     input.value = '';
   }
-}
+};
 
-async function checkConnection() {
-  try {
-    const { error } = await sb.from('islemler').select('id',{count:'exact',head:true});
-    document.getElementById('sb-status').innerHTML = error
-      ? `<span style="color:var(--red)">✗ ${error.message}</span>`
-      : `<span style="color:var(--green)">✓ Bağlantı başarılı</span>`;
-  } catch(e) {
-    document.getElementById('sb-status').innerHTML = `<span style="color:var(--red)">✗ ${e.message}</span>`;
-  }
-}
+// ══════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════
+window.toggleSidebar = function() {
+  const s = document.querySelector('.sidebar'), o = document.querySelector('.sidebar-overlay');
+  const open = s.classList.toggle('open');
+  o.classList.toggle('open', open);
+};
+window.closeSidebar = function() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.querySelector('.sidebar-overlay').classList.remove('open');
+};
 
-function toggleSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.sidebar-overlay');
-  const isOpen = sidebar.classList.toggle('open');
-  overlay.classList.toggle('open', isOpen);
-}
-
-function closeSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.sidebar-overlay');
-  sidebar.classList.remove('open');
-  overlay.classList.remove('open');
-}
-
-function showPage(name) {
+window.showPage = function(name) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -1159,46 +1110,32 @@ function showPage(name) {
   if (name==='muhasebe') ta.innerHTML=`<button class="btn btn-green" onclick="openModal('modal-gelir')">+ Gelir Ekle</button><button class="btn btn-red" onclick="openModal('modal-gider')">+ Gider Ekle</button>`;
   else if (name==='dashboard') ta.innerHTML=`<button class="btn btn-green btn-sm" onclick="openModal('modal-gelir')">+ Gelir</button><button class="btn btn-red btn-sm" onclick="openModal('modal-gider')">+ Gider</button>`;
   else ta.innerHTML='';
-  if (name==='konfigurasyon') checkConnection();
-}
+};
 
-function openModal(id) {
+window.openModal = function(id) {
   document.getElementById(id).classList.add('open');
   const today = new Date().toISOString().split('T')[0];
-  if (id==='modal-gelir') { document.getElementById('g-tarih').value=today; onGelirTurChange(); }
+  if (id==='modal-gelir') { document.getElementById('g-tarih').value=today; window.onGelirTurChange(); }
   if (id==='modal-gider') document.getElementById('gd-tarih').value=today;
-}
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+};
+window.closeModal = function(id) { document.getElementById(id).classList.remove('open'); };
 document.addEventListener('click', e => { if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('open'); });
 document.addEventListener('keydown', e => { if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open')); });
+
+window.loadMuhasebe = loadMuhasebe;
 
 function fmt(n) { return (parseFloat(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function fmtDate(d) {
   if (!d) return '—';
-  const parts = String(d).split('-');
-  if (parts.length !== 3) return d;
-  return parts[2]+'.'+parts[1]+'.'+parts[0];
+  const p = String(d).split('-');
+  if (p.length!==3) return d;
+  return p[2]+'.'+p[1]+'.'+p[0];
 }
-function updateDateDisplay(id) {
+window.updateDateDisplay = function(id) {
   const val = document.getElementById(id).value;
   const display = document.getElementById(id+'-display');
   if (display) display.textContent = val ? fmtDate(val) : 'GG.MM.YYYY';
-}
-// dd.mm.yyyy → yyyy-mm-dd (Supabase sorgusu için)
-function parseDisplayDate(s) {
-  if (!s || s.length < 10) return '';
-  const p = s.split('.');
-  if (p.length !== 3) return s;
-  return p[2]+'-'+p[1]+'-'+p[0];
-}
-// yyyy-mm-dd → dd.mm.yyyy
-function toDisplayDate(s) {
-  if (!s) return '';
-  const p = s.split('-');
-  if (p.length !== 3) return s;
-  return p[2]+'.'+p[1]+'.'+p[0];
-}
-
+};
 function showToast(msg, type='success') {
   const c = document.getElementById('toast-container');
   const el = document.createElement('div');
@@ -1208,15 +1145,13 @@ function showToast(msg, type='success') {
   setTimeout(()=>el.remove(),3500);
 }
 
-showPage('dashboard');
+window.showPage('dashboard');
 </script>
 
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW registered'))
-      .catch(err => console.log('SW error:', err));
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
 </script>
